@@ -28,6 +28,7 @@ const eurCompact = new Intl.NumberFormat("en-IE", {
   style: "currency",
   currency: "EUR",
   notation: "compact",
+  minimumFractionDigits: 0,
   maximumFractionDigits: 1,
 });
 
@@ -40,7 +41,7 @@ const eurFull = new Intl.NumberFormat("en-IE", {
 const integer = new Intl.NumberFormat("en-IE", { maximumFractionDigits: 0 });
 
 export function formatEurCompact(value: number): string {
-  return eurCompact.format(value);
+  return Math.abs(value) < 1000 ? eurFull.format(value) : eurCompact.format(value);
 }
 
 export function formatEur(value: number): string {
