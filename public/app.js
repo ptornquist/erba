@@ -25,9 +25,12 @@ function render(messages) {
   }
 }
 
-async function loadMessages() {
+async function loadMessages({ scrollToLatest = false } = {}) {
   const res = await fetch("/api/messages");
   render(await res.json());
+  if (scrollToLatest && messagesEl.lastElementChild) {
+    messagesEl.lastElementChild.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
 }
 
 formEl.addEventListener("submit", async (event) => {
@@ -42,7 +45,7 @@ formEl.addEventListener("submit", async (event) => {
   });
 
   inputEl.value = "";
-  await loadMessages();
+  await loadMessages({ scrollToLatest: true });
   inputEl.focus();
 });
 
