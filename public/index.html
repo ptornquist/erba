@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>erba</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <h1 class="app__title">erba</h1>
+        <p class="app__subtitle">A tiny message board to prove the environment works end to end.</p>
+      </header>
+
+      <form id="composer" class="composer">
+        <input
+          id="text"
+          class="composer__input"
+          type="text"
+          placeholder="Write a message…"
+          autocomplete="off"
+          required
+        />
+        <button class="composer__button" type="submit">Post</button>
+      </form>
+
+      <ul id="messages" class="messages" aria-live="polite"></ul>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
