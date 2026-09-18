@@ -32,7 +32,9 @@ npm run dev
 
 ## Database
 
-The full schema (seven tables), row-level-security policies and a seed for the policy feed live in [`supabase/schema.sql`](supabase/schema.sql). Run it in the Supabase SQL editor on a fresh project. TypeScript types for every table are in `types/database.ts`.
+The full schema (seven tables), row-level-security policies and a seed for the policy feed live in [`supabase/schema.sql`](supabase/schema.sql); [`supabase/onboarding_trigger.sql`](supabase/onboarding_trigger.sql) adds the `auth.users` trigger that provisions `profiles`/`companies`/`pain_submissions` from the sign-up payload (required when email confirmation is enabled, since the browser has no session yet). Run both in the Supabase SQL editor on a fresh project. TypeScript types for every table are in `types/database.ts`.
+
+Auth settings: add `<your-domain>/auth/callback` to **Authentication → URL Configuration → Redirect URLs** so email-confirmation links complete sign-in.
 
 | Table               | Purpose                                                      | Access (RLS)                                   |
 | ------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
@@ -55,7 +57,8 @@ components/join/     onboarding wizard, sign-in form
 components/dashboard sidebar nav, Burden Alert card, Referral Tracker, policy feed, checklist board, document vault, forum feed
 lib/dashboard.ts    per-request auth + company context for dashboard routes
 lib/compliance-templates.ts  industry checklist templates
-supabase/schema.sql  tables, RLS policies, seed data
+supabase/           schema.sql (tables, RLS, seed) + onboarding_trigger.sql
+app/auth/callback   exchanges email-confirmation code for a session
 lib/supabase.ts      browser client
 lib/supabase-server.ts  server + public (anon) clients
 lib/validations/     zod schemas
