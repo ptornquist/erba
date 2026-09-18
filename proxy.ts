@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase-config";
 import type { Database } from "@/types/database";
 
 const PROTECTED_PREFIXES = ["/dashboard"];
@@ -11,8 +12,8 @@ const PROTECTED_PREFIXES = ["/dashboard"];
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = SUPABASE_URL;
+  const anonKey = SUPABASE_ANON_KEY;
   const isProtected = PROTECTED_PREFIXES.some((p) =>
     request.nextUrl.pathname.startsWith(p),
   );

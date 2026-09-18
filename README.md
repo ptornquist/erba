@@ -12,9 +12,10 @@ High-velocity advocacy platform for mid-cap CEOs documenting the cumulative cost
 ## Getting started
 
 ```bash
-cp .env.example .env.local   # add your Supabase URL + anon key
 npm install
 npm run dev
+# Optional: cp .env.example .env.local to point at a different Supabase project.
+# The production project URL and public anon key are the defaults in lib/supabase-config.ts.
 ```
 
 ## Routes

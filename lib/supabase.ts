@@ -1,13 +1,13 @@
 import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import { SUPABASE_ANON_KEY, SUPABASE_URL, isSupabaseConfigured } from "@/lib/supabase-config";
 
-export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-export const SUPABASE_ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-
-export const isSupabaseConfigured =
-  SUPABASE_URL.length > 0 && SUPABASE_ANON_KEY.length > 0;
+export {
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  isSupabaseConfigured,
+} from "@/lib/supabase-config";
 
 export type TypedSupabaseClient = SupabaseClient<Database>;
 
