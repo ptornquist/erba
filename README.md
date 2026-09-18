@@ -12,9 +12,10 @@ High-velocity advocacy platform for mid-cap CEOs documenting the cumulative cost
 ## Getting started
 
 ```bash
-cp .env.example .env.local   # add your Supabase URL + anon key
 npm install
 npm run dev
+# Optional: cp .env.example .env.local to point at a different Supabase project.
+# The production project URL and public anon key are the defaults in lib/supabase-config.ts.
 ```
 
 ## Routes
@@ -23,43 +24,30 @@ npm run dev
 | ------------- | --------------------------------------------------------------------------- |
 | `/`           | Landing page: hero, momentum bar, "Why Now" columns                         |
 | `/join`       | 3-step onboarding wizard (Account → Company → Pain Index); `?ref=CODE` supported; `?mode=signin` for returning members |
-| `/dashboard`  | Member War Room + Referral Tracker (auth required, redirects to `/join`)    |
+| `/dashboard`  | Overview: War Room + Referral Tracker (auth required, redirects to `/join`) |
+| `/dashboard/policy` | Dynamic Policy Dashboard – `policy_updates` feed with impact filters  |
+| `/dashboard/checklists` | Automated Compliance Checklists – per-company `compliance_tasks`, auto-provisioned from industry templates, toggle/add/remove |
+| `/dashboard/vault` | Secure Document Vault – `document_vault` data table, mock upload, CSV export |
+| `/dashboard/forum` | Alliance Networking Hub – members-only `forum_posts` feed and composer |
 | `/pain-index` | Public data viz: total documented cost + leaderboard by regulation          |
 
 ## Database
 
-The app expects these tables (see `types/database.ts`):
+The full schema (seven tables), row-level-security policies and a seed for the policy feed live in [`supabase/schema.sql`](supabase/schema.sql); [`supabase/onboarding_trigger.sql`](supabase/onboarding_trigger.sql) adds the `auth.users` trigger that provisions `profiles`/`companies`/`pain_submissions` from the sign-up payload (required when email confirmation is enabled, since the browser has no session yet). Run both in the Supabase SQL editor on a fresh project. TypeScript types for every table are in `types/database.ts`.
 
-```sql
-create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text not null,
-  referral_code text not null unique,
-  referred_by text,
-  created_at timestamptz not null default now()
-);
+Auth settings: add `<your-domain>/auth/callback` to **Authentication → URL Configuration → Redirect URLs** so email-confirmation links complete sign-in.
 
-create table companies (
-  id uuid primary key default gen_random_uuid(),
-  profile_id uuid not null references profiles(id) on delete cascade,
-  name text not null,
-  turnover_band text not null,
-  industry text not null,
-  is_anonymous boolean not null default false,
-  created_at timestamptz not null default now()
-);
+| Table               | Purpose                                                      | Access (RLS)                                   |
+| ------------------- | ------------------------------------------------------------ | ---------------------------------------------- |
+| `profiles`          | One row per auth user; referral code                          | Owner read/write                               |
+| `companies`         | Company profile(s) owned by a member                          | Owner write; members read (for forum authors)  |
+| `pain_submissions`  | Regulatory cost data points                                   | Public read (Pain Index); owner insert         |
+| `policy_updates`    | Curated regulatory intelligence feed                          | Members read; staff/service-role write         |
+| `compliance_tasks`  | Per-company checklist items                                   | Owning company only                            |
+| `document_vault`    | Certificate / evidence metadata                               | Owning company only                            |
+| `forum_posts`       | Networking Hub posts                                          | Members read; owning company insert/delete     |
 
-create table pain_submissions (
-  id uuid primary key default gen_random_uuid(),
-  company_id uuid not null references companies(id) on delete cascade,
-  regulation_name text not null,
-  estimated_cost_eur numeric not null,
-  description text,
-  created_at timestamptz not null default now()
-);
-```
-
-Suggested RLS policies: authenticated users can insert/select their own `profiles` and `companies` rows (and `pain_submissions` for their companies); `pain_submissions` is publicly readable (`select` for `anon`) so the Pain Index can aggregate it. Reading `profiles` filtered by `referred_by` requires a `select` policy for authenticated users on that column, or a security-definer RPC.
+File storage for the vault is mocked in the MVP: rows are written with a `vault://` URI so the table, export and RLS paths are exercised without a Storage bucket.
 
 ## Project layout
 
@@ -67,7 +55,11 @@ Suggested RLS policies: authenticated users can insert/select their own `profile
 app/                 routes (page.tsx per route) + layout + globals.css
 components/ui/       Button, Input, Label, Select, Switch, Card, Progress, Badge, Alert, Textarea
 components/join/     onboarding wizard, sign-in form
-components/dashboard Burden Alert card, Referral Tracker
+components/dashboard sidebar nav, Burden Alert card, Referral Tracker, policy feed, checklist board, document vault, forum feed
+lib/dashboard.ts    per-request auth + company context for dashboard routes
+lib/compliance-templates.ts  industry checklist templates
+supabase/           schema.sql (tables, RLS, seed) + onboarding_trigger.sql
+app/auth/callback   exchanges email-confirmation code for a session
 lib/supabase.ts      browser client
 lib/supabase-server.ts  server + public (anon) clients
 lib/validations/     zod schemas

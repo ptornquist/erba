@@ -35,7 +35,7 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="hover:text-foreground">
+                <Link href="/dashboard" prefetch={false} className="hover:text-foreground">
                   Member Dashboard
                 </Link>
               </li>

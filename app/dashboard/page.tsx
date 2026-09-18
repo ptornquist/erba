@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowUpRight, Building2, Euro, FileText, Plus } from "lucide-react";
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
+import { PageHeader } from "@/components/dashboard/page-header";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import {
@@ -13,106 +13,46 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { isSupabaseConfigured } from "@/lib/supabase";
-import { createServerSupabaseClient } from "@/lib/supabase-server";
-import { formatEur, generateReferralCode, toNumber } from "@/lib/utils";
-import type { Company, PainSubmission, Profile } from "@/types/database";
+import { getDashboardContext } from "@/lib/dashboard";
+import { formatEur, toNumber } from "@/lib/utils";
+import type { PainSubmission } from "@/types/database";
 
 export const metadata: Metadata = {
-  title: "Member Dashboard",
-  robots: { index: false, follow: false },
+  title: "Overview",
 };
 
-export const dynamic = "force-dynamic";
-
-export default async function DashboardPage() {
-  if (!isSupabaseConfigured) {
-    redirect("/join");
-  }
-
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/join?next=/dashboard");
-  }
-
-  const { data: existingProfile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  let profile: Profile | null = existingProfile;
-
-  // Self-heal: a profile row can be missing if the sign-up flow was
-  // interrupted between auth.signUp() and the profiles insert.
-  if (!profile) {
-    const { data: created } = await supabase
-      .from("profiles")
-      .insert({
-        id: user.id,
-        email: user.email ?? "",
-        referral_code: generateReferralCode(),
-        referred_by: null,
-      })
-      .select("*")
-      .single();
-    profile = created;
-  }
+export default async function DashboardOverviewPage() {
+  const { supabase, user, profile, companies, company, fullName } =
+    await getDashboardContext();
 
   const referralCode = profile?.referral_code ?? "------";
-
-  const [{ data: companiesData }, { count: referralCount }] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("*")
-      .eq("profile_id", user.id)
-      .order("created_at", { ascending: true }),
-    profile
-      ? supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("referred_by", profile.referral_code)
-      : Promise.resolve({ count: 0 }),
-  ]);
-
-  const companies: Company[] = companiesData ?? [];
   const companyIds = companies.map((c) => c.id);
 
-  let submissions: PainSubmission[] = [];
-  if (companyIds.length > 0) {
-    const { data } = await supabase
-      .from("pain_submissions")
-      .select("*")
-      .in("company_id", companyIds)
-      .order("created_at", { ascending: false });
-    submissions = data ?? [];
-  }
+  const [{ data: referralCount }, submissionsResult] = await Promise.all([
+    supabase.rpc("referral_count"),
+    companyIds.length > 0
+      ? supabase
+          .from("pain_submissions")
+          .select("*")
+          .in("company_id", companyIds)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: [] as PainSubmission[] }),
+  ]);
 
-  const primaryCompany = companies[0] ?? null;
+  const submissions: PainSubmission[] = submissionsResult.data ?? [];
+  const primaryCompany = company;
   const totalCost = submissions.reduce(
     (sum, s) => sum + toNumber(s.estimated_cost_eur),
     0,
   );
-  const fullName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : null;
 
   return (
-    <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-            Member Dashboard
-          </p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">
-            {primaryCompany ? primaryCompany.name : "Welcome to the Alliance"}
-          </h1>
-          <p className="mt-2 text-muted-foreground">
+    <>
+      <PageHeader
+        eyebrow="Overview"
+        title={primaryCompany ? primaryCompany.name : "Welcome to the Alliance"}
+        description={
+          <>
             {fullName ? `${fullName} · ` : ""}
             {user.email}
             {primaryCompany?.is_anonymous && (
@@ -120,17 +60,17 @@ export default async function DashboardPage() {
                 Anonymous
               </Badge>
             )}
-          </p>
-        </div>
-        <div className="flex gap-3">
+          </>
+        }
+        actions={
           <ButtonLink href="/pain-index" variant="outline">
             Public Pain Index
             <ArrowUpRight />
           </ButtonLink>
-        </div>
-      </header>
+        }
+      />
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-8">
           <section aria-labelledby="war-room-heading" className="space-y-4">
             <div className="flex items-center justify-between">
@@ -287,6 +227,6 @@ export default async function DashboardPage() {
           </Card>
         </aside>
       </div>
-    </div>
+    </>
   );
 }

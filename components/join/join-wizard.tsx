@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,8 @@ import {
   STEP_FIELDS,
   type JoinFormValues,
 } from "@/lib/validations/join";
+import { humaniseSupabaseError } from "@/lib/errors";
+import { hardNavigate } from "@/lib/navigation";
 import { cn, generateReferralCode } from "@/lib/utils";
 
 const STEPS = [
@@ -47,7 +49,6 @@ interface JoinWizardProps {
 }
 
 export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const referredBy = searchParams.get("ref")?.trim().toUpperCase() ?? null;
   const nextPath = searchParams.get("next") ?? "/dashboard";
@@ -111,15 +112,31 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
     try {
       const supabase = createClient();
 
+      // The full onboarding payload travels with the auth user so the
+      // `on_auth_user_created` trigger can provision profile/company/pain rows
+      // server-side. That is required when email confirmation is enabled,
+      // because the browser has no session (and therefore no RLS rights) yet.
+      const onboarding = {
+        full_name: values.name,
+        company_name: values.companyName,
+        industry: values.industry,
+        turnover_band: values.turnoverBand,
+        is_anonymous: values.isAnonymous,
+        regulation_name: values.regulation,
+        estimated_cost_eur: values.estimatedCostEur,
+        description: values.description ? values.description : null,
+        referred_by: referredBy,
+      };
+
       const { data: signUpData, error: signUpError } =
         await supabase.auth.signUp({
           email: values.email,
           password: values.password,
           options: {
-            data: { full_name: values.name },
+            data: onboarding,
             emailRedirectTo:
               typeof window !== "undefined"
-                ? `${window.location.origin}/dashboard`
+                ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
                 : undefined,
           },
         });
@@ -139,52 +156,70 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         );
       }
 
-      const referralCode = generateReferralCode();
-
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: user.id,
-        email: values.email,
-        referral_code: referralCode,
-        referred_by: referredBy,
-      });
-      if (profileError) throw profileError;
-
-      const { data: company, error: companyError } = await supabase
-        .from("companies")
-        .insert({
-          profile_id: user.id,
-          name: values.companyName,
-          industry: values.industry,
-          turnover_band: values.turnoverBand,
-          is_anonymous: values.isAnonymous,
-        })
-        .select("id")
-        .single();
-      if (companyError) throw companyError;
-
-      const { error: painError } = await supabase
-        .from("pain_submissions")
-        .insert({
-          company_id: company.id,
-          regulation_name: values.regulation,
-          estimated_cost_eur: values.estimatedCostEur,
-          description: values.description ? values.description : null,
-        });
-      if (painError) throw painError;
-
       if (!signUpData.session) {
+        // Rows are provisioned by the database trigger; the member unlocks
+        // the dashboard once they confirm their email.
         setNeedsEmailConfirmation(true);
         return;
       }
 
-      router.push(nextPath);
-      router.refresh();
+      // Confirmation disabled: we hold a session, so insert directly if the
+      // trigger has not already done it (projects without the trigger).
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        const { error: profileError } = await supabase.from("profiles").insert({
+          id: user.id,
+          email: values.email,
+          referral_code: generateReferralCode(),
+          referred_by: referredBy,
+        });
+        if (profileError) throw profileError;
+      }
+
+      const { count: companyCount } = await supabase
+        .from("companies")
+        .select("id", { count: "exact", head: true })
+        .eq("profile_id", user.id);
+
+      if (!companyCount) {
+        const { data: company, error: companyError } = await supabase
+          .from("companies")
+          .insert({
+            profile_id: user.id,
+            name: values.companyName,
+            industry: values.industry,
+            turnover_band: values.turnoverBand,
+            is_anonymous: values.isAnonymous,
+          })
+          .select("id")
+          .single();
+        if (companyError) throw companyError;
+
+        const { error: painError } = await supabase
+          .from("pain_submissions")
+          .insert({
+            company_id: company.id,
+            regulation_name: values.regulation,
+            estimated_cost_eur: values.estimatedCostEur,
+            description: values.description ? values.description : null,
+          });
+        if (painError) throw painError;
+      }
+
+      // Hard navigation so the router cannot reuse a prefetched pre-auth redirect.
+      hardNavigate(nextPath);
     } catch (err) {
       console.error("Join submission failed", err);
       setSubmitError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Something went wrong while creating your account. Please try again.",
+        humaniseSupabaseError(
+          err,
+          "Something went wrong while creating your account. Please try again.",
+        ),
       );
     }
   }

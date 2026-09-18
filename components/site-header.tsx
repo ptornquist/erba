@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, ShieldAlert, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
+import { hardNavigate } from "@/lib/navigation";
 import { SITE_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +17,6 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const router = useRouter();
   const [isAuthed, setIsAuthed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -44,8 +44,7 @@ export function SiteHeader() {
     if (!isSupabaseConfigured) return;
     await createClient().auth.signOut();
     setIsAuthed(false);
-    router.push("/");
-    router.refresh();
+    hardNavigate("/");
   }
 
   return (
