@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/form-field";
+import { humaniseSupabaseError } from "@/lib/errors";
+import { hardNavigate } from "@/lib/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { signInSchema, type SignInFormValues } from "@/lib/validations/join";
 
@@ -17,10 +19,13 @@ interface SignInFormProps {
 }
 
 export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") ?? "/dashboard";
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(
+    searchParams.get("error") === "confirmation_failed"
+      ? "That confirmation link is invalid or has expired. Sign in below, or request a new link by signing up again."
+      : null,
+  );
 
   const {
     register,
@@ -48,14 +53,16 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
       });
       if (error) throw error;
 
-      router.push(nextPath);
-      router.refresh();
+      // Hard navigation: the client router may hold a prefetched, pre-auth
+      // redirect for the destination, so bypass its cache entirely.
+      hardNavigate(nextPath);
     } catch (err) {
       console.error("Sign-in failed", err);
       setSubmitError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not sign you in. Check your credentials and try again.",
+        humaniseSupabaseError(
+          err,
+          "Could not sign you in. Check your credentials and try again.",
+        ),
       );
     }
   }
