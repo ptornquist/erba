@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  --background: #09090b;
-  --foreground: #fafafa;
+  --background: #ffffff;
+  --foreground: #0a1628;
 
-  --card: #111114;
-  --card-foreground: #fafafa;
+  --card: #ffffff;
+  --card-foreground: #0a1628;
 
-  --popover: #111114;
-  --popover-foreground: #fafafa;
+  --popover: #ffffff;
+  --popover-foreground: #0a1628;
 
-  --primary: #ef3b2f;
+  --primary: #003399;
   --primary-foreground: #ffffff;
 
-  --secondary: #1c1c21;
-  --secondary-foreground: #fafafa;
+  --secondary: #e8eef8;
+  --secondary-foreground: #003399;
 
-  --muted: #1c1c21;
-  --muted-foreground: #a1a1aa;
+  --muted: #f4f7fb;
+  --muted-foreground: #4a5d7a;
 
-  --accent: #26262c;
-  --accent-foreground: #fafafa;
+  --accent: #d6e4f7;
+  --accent-foreground: #003399;
 
-  --destructive: #f87171;
+  --destructive: #002266;
   --destructive-foreground: #ffffff;
 
-  --border: #27272a;
-  --input: #2e2e33;
-  --ring: #ef3b2f;
+  --border: #c5d4ea;
+  --input: #c5d4ea;
+  --ring: #003399;
 
-  --eu-yellow: #ffcc00;
+  --eu-yellow: #4d7cc9;
   --eu-blue: #003399;
 
   --radius: 0.625rem;
@@ -105,8 +105,8 @@
 
 @utility bg-grid {
   background-image:
-    linear-gradient(to right, rgb(255 255 255 / 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+    linear-gradient(to right, rgb(0 51 153 / 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(0 51 153 / 0.08) 1px, transparent 1px);
   background-size: 48px 48px;
 }
 

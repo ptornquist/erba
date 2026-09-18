@@ -105,7 +105,7 @@ export function ReferralTracker({
           <Progress
             value={percent}
             aria-label={`${clamped} of ${REFERRALS_TO_UNLOCK} referrals completed`}
-            indicatorClassName={cn(unlocked && "bg-emerald-500")}
+            indicatorClassName={cn(unlocked && "bg-primary")}
           />
           <div className="flex justify-between">
             {Array.from({ length: REFERRALS_TO_UNLOCK }, (_, i) => (

@@ -159,14 +159,14 @@ export function ChecklistBoard({
               </p>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <CheckCircle2 className="size-4 text-emerald-400" aria-hidden="true" />
+              <CheckCircle2 className="size-4 text-primary" aria-hidden="true" />
               {completed} of {tasks.length} obligations complete
             </div>
           </div>
           <Progress
             value={percent}
             aria-label="Checklist completion"
-            indicatorClassName={cn(percent === 100 && "bg-emerald-500")}
+            indicatorClassName={cn(percent === 100 && "bg-primary")}
           />
         </CardContent>
       </Card>

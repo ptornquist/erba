@@ -47,7 +47,7 @@ export function BurdenAlertCard({ letterInput }: BurdenAlertCardProps) {
     <Card className="relative overflow-hidden border-primary/40">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(239,59,47,0.18),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,51,153,0.12),transparent_55%)]"
       />
       <CardHeader className="relative">
         <div className="flex flex-wrap items-center gap-2">

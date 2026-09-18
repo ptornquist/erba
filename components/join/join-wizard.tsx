@@ -227,7 +227,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   if (needsEmailConfirmation) {
     return (
       <div className="rounded-2xl border border-border bg-card p-8 text-center sm:p-12">
-        <span className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
+        <span className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
           <MailCheck className="size-8" aria-hidden="true" />
         </span>
         <h2 className="text-2xl font-bold tracking-tight">Confirm your email</h2>
@@ -262,7 +262,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
               className={cn(
                 "flex items-center gap-3 border-b-2 px-4 py-4 sm:px-6",
                 state === "current" && "border-primary",
-                state === "complete" && "border-emerald-500",
+                state === "complete" && "border-primary",
                 state === "upcoming" && "border-transparent",
               )}
             >
@@ -270,7 +270,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 className={cn(
                   "flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold",
                   state === "current" && "bg-primary text-primary-foreground",
-                  state === "complete" && "bg-emerald-500 text-white",
+                  state === "complete" && "bg-primary text-primary-foreground",
                   state === "upcoming" && "bg-secondary text-muted-foreground",
                 )}
               >
