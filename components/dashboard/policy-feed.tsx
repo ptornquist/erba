@@ -30,14 +30,14 @@ const IMPACT_META: Record<
   Med: {
     label: "Medium impact",
     badge: "warning",
-    bar: "bg-amber-400",
+    bar: "bg-primary/50",
     action:
       "Assign an owner to assess exposure within 30 days and log findings in your compliance checklist.",
   },
   Low: {
     label: "Low impact",
     badge: "secondary",
-    bar: "bg-muted-foreground/60",
+    bar: "bg-primary/25",
     action:
       "Monitor only. Revisit at the next quarterly compliance review.",
   },

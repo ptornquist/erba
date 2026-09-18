@@ -56,7 +56,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden bg-grid">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(239,59,47,0.22),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,51,153,0.14),transparent_60%)]"
         />
         <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 pb-24 pt-20 text-center sm:px-6 lg:px-8 lg:pb-32 lg:pt-28">
           <Badge variant="warning" className="mb-6 px-3 py-1 text-xs uppercase tracking-widest">
@@ -75,7 +75,7 @@ export default function LandingPage() {
             <ButtonLink
               href="/join"
               size="xl"
-              className="w-full shadow-[0_0_60px_-10px_rgba(239,59,47,0.7)] sm:w-auto"
+              className="w-full shadow-[0_0_60px_-10px_rgba(0,51,153,0.45)] sm:w-auto"
             >
               Join Free – Add Your Regulatory Pain
               <ArrowRight aria-hidden="true" />
@@ -206,7 +206,7 @@ export default function LandingPage() {
       <section className="relative overflow-hidden py-24 lg:py-32">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(239,59,47,0.18),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,rgba(0,51,153,0.12),transparent_60%)]"
         />
         <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <h2 className="text-balance text-4xl font-black tracking-tight sm:text-6xl">

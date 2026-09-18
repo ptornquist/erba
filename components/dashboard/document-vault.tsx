@@ -331,7 +331,7 @@ export function DocumentVault({
                               className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                             >
                               {copiedId === doc.id ? (
-                                <Check className="size-4 text-emerald-400" />
+                                <Check className="size-4 text-primary" />
                               ) : (
                                 <Copy className="size-4" />
                               )}

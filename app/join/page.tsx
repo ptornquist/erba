@@ -37,7 +37,7 @@ export default async function JoinPage(props: PageProps<"/join">) {
     <section className="relative flex-1 overflow-hidden bg-grid py-12 sm:py-16 lg:py-20">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(239,59,47,0.16),transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(0,51,153,0.12),transparent_55%)]"
       />
       <div className="relative mx-auto grid max-w-7xl gap-12 px-4 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start lg:gap-16 lg:px-8">
         <div className="lg:sticky lg:top-28">

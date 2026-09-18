@@ -32,7 +32,7 @@ function regulationLabel(name: string): string {
 
 const RANK_STYLES = [
   "bg-primary text-primary-foreground",
-  "bg-eu-yellow text-black",
+  "bg-primary/80 text-primary-foreground",
   "bg-secondary text-foreground",
 ];
 
@@ -46,7 +46,7 @@ export default async function PainIndexPage() {
       <section className="relative overflow-hidden bg-grid">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(239,59,47,0.2),transparent_60%)]"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,51,153,0.12),transparent_60%)]"
         />
         <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-16 text-center sm:px-6 lg:px-8 lg:pb-24 lg:pt-24">
           <Badge variant="warning" className="mb-6 px-3 py-1 text-xs uppercase tracking-widest">
