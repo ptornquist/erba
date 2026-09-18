@@ -28,13 +28,8 @@ export default async function DashboardOverviewPage() {
   const referralCode = profile?.referral_code ?? "------";
   const companyIds = companies.map((c) => c.id);
 
-  const [{ count: referralCount }, submissionsResult] = await Promise.all([
-    profile
-      ? supabase
-          .from("profiles")
-          .select("id", { count: "exact", head: true })
-          .eq("referred_by", profile.referral_code)
-      : Promise.resolve({ count: 0 }),
+  const [{ data: referralCount }, submissionsResult] = await Promise.all([
+    supabase.rpc("referral_count"),
     companyIds.length > 0
       ? supabase
           .from("pain_submissions")

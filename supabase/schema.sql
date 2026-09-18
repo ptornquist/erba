@@ -1,5 +1,6 @@
 -- ERBA platform schema + row-level security.
--- Run in the Supabase SQL editor (or `supabase db push`) on a fresh project.
+-- Run in the Supabase SQL editor (or `supabase db push`) on a fresh project,
+-- then run supabase/onboarding_trigger.sql.
 
 create extension if not exists "pgcrypto";
 
@@ -77,9 +78,15 @@ create index if not exists forum_posts_created_at_idx on public.forum_posts (cre
 
 -- ---------------------------------------------------------------------------
 -- Helper: does the current user own the given company?
+-- Lives in a non-exposed schema so it cannot be invoked through the Data API;
+-- RLS policies can still call it.
 -- ---------------------------------------------------------------------------
 
-create or replace function public.owns_company(target_company uuid)
+create schema if not exists private;
+revoke all on schema private from public, anon;
+grant usage on schema private to authenticated;
+
+create or replace function private.owns_company(target_company uuid)
 returns boolean
 language sql
 stable
@@ -91,6 +98,29 @@ as $$
     where c.id = target_company and c.profile_id = auth.uid()
   );
 $$;
+
+revoke all on function private.owns_company(uuid) from public, anon;
+grant execute on function private.owns_company(uuid) to authenticated;
+
+-- Number of members who signed up with the caller's referral code.
+-- Returns only an integer for the calling user, so nothing about other
+-- profiles leaks even though it runs as definer.
+create or replace function public.referral_count()
+returns integer
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select count(*)::integer
+  from public.profiles referred
+  join public.profiles me on me.id = auth.uid()
+  where referred.referred_by = me.referral_code
+    and referred.id <> me.id;
+$$;
+
+revoke all on function public.referral_count() from public, anon;
+grant execute on function public.referral_count() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Row-level security
@@ -104,14 +134,11 @@ alter table public.compliance_tasks enable row level security;
 alter table public.document_vault   enable row level security;
 alter table public.forum_posts      enable row level security;
 
--- profiles: owner read/write; members may look up referral counts by code.
+-- profiles: owner read/write. Referral counts are exposed via the
+-- referral_count() RPC below rather than by widening select access.
 drop policy if exists "profiles: owner select" on public.profiles;
 create policy "profiles: owner select" on public.profiles
   for select to authenticated using (id = auth.uid());
-
-drop policy if exists "profiles: referral lookup" on public.profiles;
-create policy "profiles: referral lookup" on public.profiles
-  for select to authenticated using (referred_by is not null);
 
 drop policy if exists "profiles: owner insert" on public.profiles;
 create policy "profiles: owner insert" on public.profiles
@@ -137,7 +164,7 @@ create policy "pain_submissions: public read" on public.pain_submissions
 
 drop policy if exists "pain_submissions: owner insert" on public.pain_submissions;
 create policy "pain_submissions: owner insert" on public.pain_submissions
-  for insert to authenticated with check (public.owns_company(company_id));
+  for insert to authenticated with check (private.owns_company(company_id));
 
 -- policy_updates: read-only for members; written by service role / staff only.
 drop policy if exists "policy_updates: member read" on public.policy_updates;
@@ -148,12 +175,12 @@ create policy "policy_updates: member read" on public.policy_updates
 drop policy if exists "compliance_tasks: owner all" on public.compliance_tasks;
 create policy "compliance_tasks: owner all" on public.compliance_tasks
   for all to authenticated
-  using (public.owns_company(company_id)) with check (public.owns_company(company_id));
+  using (private.owns_company(company_id)) with check (private.owns_company(company_id));
 
 drop policy if exists "document_vault: owner all" on public.document_vault;
 create policy "document_vault: owner all" on public.document_vault
   for all to authenticated
-  using (public.owns_company(company_id)) with check (public.owns_company(company_id));
+  using (private.owns_company(company_id)) with check (private.owns_company(company_id));
 
 -- forum_posts: every member can read; only the owning company can post/delete.
 drop policy if exists "forum_posts: member read" on public.forum_posts;
@@ -162,11 +189,11 @@ create policy "forum_posts: member read" on public.forum_posts
 
 drop policy if exists "forum_posts: owner insert" on public.forum_posts;
 create policy "forum_posts: owner insert" on public.forum_posts
-  for insert to authenticated with check (public.owns_company(company_id));
+  for insert to authenticated with check (private.owns_company(company_id));
 
 drop policy if exists "forum_posts: owner delete" on public.forum_posts;
 create policy "forum_posts: owner delete" on public.forum_posts
-  for delete to authenticated using (public.owns_company(company_id));
+  for delete to authenticated using (private.owns_company(company_id));
 
 -- ---------------------------------------------------------------------------
 -- Seed: initial policy intelligence feed
