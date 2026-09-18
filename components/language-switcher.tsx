@@ -1,14 +1,19 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
-import { locales, localeNames, type Locale } from "@/i18n/routing";
+import { usePathname } from "@/i18n/navigation";
+import { hardNavigate } from "@/lib/navigation";
+import { locales, localeNames, localizePath, type Locale } from "@/i18n/routing";
 
 export function LanguageSwitcher({ className }: { className?: string }) {
   const t = useTranslations("nav");
   const locale = useLocale();
-  const router = useRouter();
   const pathname = usePathname();
+
+  function switchTo(next: Locale) {
+    const search = window.location.search;
+    hardNavigate(`${localizePath(next, pathname)}${search}`);
+  }
 
   return (
     <label className={className}>
@@ -17,10 +22,7 @@ export function LanguageSwitcher({ className }: { className?: string }) {
         value={locale}
         aria-label={t("language")}
         className="h-9 max-w-[10.5rem] truncate rounded-md border border-border bg-background px-2 text-sm text-foreground"
-        onChange={(event) => {
-          const next = event.target.value as Locale;
-          router.replace(pathname, { locale: next });
-        }}
+        onChange={(event) => switchTo(event.target.value as Locale)}
       >
         {locales.map((code) => (
           <option key={code} value={code} lang={code}>

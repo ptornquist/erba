@@ -70,8 +70,7 @@ export function SignInForm() {
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-      <h2 className="text-2xl font-bold tracking-tight">{t("title")}</h2>
-      <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
+      <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 
       <form
         onSubmit={handleSubmit(onSubmit)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, ShieldAlert, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { hardNavigate } from "@/lib/navigation";
 import { localizePath } from "@/i18n/routing";
 import { SITE_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { useLocale } from "next-intl";
 
 export function SiteHeader() {
   const t = useTranslations("nav");
@@ -65,47 +64,45 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                pathname === link.href && "text-foreground",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
+        <div className="flex items-center gap-3">
           <LanguageSwitcher />
-          {isAuthed ? (
-            <>
-              <ButtonLink href="/dashboard" variant="outline" size="sm">
-                {t("dashboard")}
-              </ButtonLink>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut />
-                {t("signOut")}
-              </Button>
-            </>
-          ) : (
-            <>
-              <ButtonLink href="/login" variant="outline" size="sm">
-                {t("login")}
-              </ButtonLink>
-              <ButtonLink href="/join" size="sm">
-                {t("join")}
-              </ButtonLink>
-            </>
-          )}
-        </nav>
-
-        <div className="flex items-center gap-2 md:hidden">
-          <LanguageSwitcher />
+          <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                  pathname === link.href && "text-foreground",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {isAuthed ? (
+              <>
+                <ButtonLink href="/dashboard" variant="outline" size="sm">
+                  {t("dashboard")}
+                </ButtonLink>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut />
+                  {t("signOut")}
+                </Button>
+              </>
+            ) : (
+              <>
+                <ButtonLink href="/login" variant="outline" size="sm">
+                  {t("login")}
+                </ButtonLink>
+                <ButtonLink href="/join" size="sm">
+                  {t("join")}
+                </ButtonLink>
+              </>
+            )}
+          </nav>
           <button
             type="button"
-            className="inline-flex size-10 items-center justify-center rounded-md text-foreground hover:bg-accent"
+            className="inline-flex size-10 items-center justify-center rounded-md text-foreground hover:bg-accent md:hidden"
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
             aria-label={t("menu")}
