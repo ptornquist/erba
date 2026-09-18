@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   ClipboardCheck,
   FolderLock,
@@ -10,69 +9,71 @@ import {
   Radar,
   type LucideIcon,
 } from "lucide-react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
-export interface NavItem {
-  href: string;
-  label: string;
-  shortLabel: string;
-  description: string;
+interface NavItem {
+  href: "/dashboard" | "/dashboard/policy" | "/dashboard/checklists" | "/dashboard/vault" | "/dashboard/forum";
+  labelKey: "overview" | "policy" | "checklists" | "vault" | "forum";
+  shortKey: "overview" | "policyShort" | "checklistsShort" | "vaultShort" | "forumShort";
+  descKey: "overviewDesc" | "policyDesc" | "checklistsDesc" | "vaultDesc" | "forumDesc";
   icon: LucideIcon;
   exact?: boolean;
 }
 
-export const DASHBOARD_NAV: NavItem[] = [
+const DASHBOARD_NAV: NavItem[] = [
   {
     href: "/dashboard",
-    label: "Overview",
-    shortLabel: "Overview",
-    description: "War Room & referrals",
+    labelKey: "overview",
+    shortKey: "overview",
+    descKey: "overviewDesc",
     icon: LayoutDashboard,
     exact: true,
   },
   {
     href: "/dashboard/policy",
-    label: "Policy Dashboard",
-    shortLabel: "Policy",
-    description: "Regulatory intelligence feed",
+    labelKey: "policy",
+    shortKey: "policyShort",
+    descKey: "policyDesc",
     icon: Radar,
   },
   {
     href: "/dashboard/checklists",
-    label: "Compliance Checklists",
-    shortLabel: "Checklists",
-    description: "Track obligations by industry",
+    labelKey: "checklists",
+    shortKey: "checklistsShort",
+    descKey: "checklistsDesc",
     icon: ClipboardCheck,
   },
   {
     href: "/dashboard/vault",
-    label: "Document Vault",
-    shortLabel: "Vault",
-    description: "Certificates & evidence",
+    labelKey: "vault",
+    shortKey: "vaultShort",
+    descKey: "vaultDesc",
     icon: FolderLock,
   },
   {
     href: "/dashboard/forum",
-    label: "Networking Hub",
-    shortLabel: "Hub",
-    description: "Member strategy exchange",
+    labelKey: "forum",
+    shortKey: "forumShort",
+    descKey: "forumDesc",
     icon: MessagesSquare,
   },
 ];
 
-export function isNavItemActive(pathname: string, item: NavItem): boolean {
-  return item.exact
-    ? pathname === item.href
-    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+export function isNavItemActive(pathname: string, href: string, exact?: boolean): boolean {
+  return exact
+    ? pathname === href
+    : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const t = useTranslations("dashboardNav");
 
   return (
     <nav aria-label="Dashboard" className="flex flex-col gap-1">
       {DASHBOARD_NAV.map((item) => {
-        const active = isNavItemActive(pathname, item);
+        const active = isNavItemActive(pathname, item.href, item.exact);
         const Icon = item.icon;
         return (
           <Link
@@ -97,9 +98,9 @@ export function SidebarNav() {
               <Icon className="size-4" aria-hidden="true" />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-medium">{item.label}</span>
+              <span className="block truncate font-medium">{t(item.labelKey)}</span>
               <span className="block truncate text-xs text-muted-foreground">
-                {item.description}
+                {t(item.descKey)}
               </span>
             </span>
           </Link>
@@ -109,9 +110,9 @@ export function SidebarNav() {
   );
 }
 
-/** Horizontal, scrollable variant rendered above the content on small screens. */
 export function MobileNav() {
   const pathname = usePathname();
+  const t = useTranslations("dashboardNav");
 
   return (
     <nav
@@ -119,7 +120,7 @@ export function MobileNav() {
       className="-mx-4 flex gap-2 overflow-x-auto border-b border-border px-4 pb-3 [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
     >
       {DASHBOARD_NAV.map((item) => {
-        const active = isNavItemActive(pathname, item);
+        const active = isNavItemActive(pathname, item.href, item.exact);
         const Icon = item.icon;
         return (
           <Link
@@ -134,7 +135,7 @@ export function MobileNav() {
             )}
           >
             <Icon className="size-4" aria-hidden="true" />
-            {item.shortLabel}
+            {t(item.shortKey)}
           </Link>
         );
       })}

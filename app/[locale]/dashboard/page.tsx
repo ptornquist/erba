@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowUpRight, Building2, Euro, FileText, Plus } from "lucide-react";
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import { getDashboardContext } from "@/lib/dashboard";
 import { formatEur, toNumber } from "@/lib/utils";
 import type { PainSubmission } from "@/types/database";
@@ -22,6 +23,9 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardOverviewPage() {
+  const t = await getTranslations("dashboard");
+  const tn = await getTranslations("dashboardNav");
+  const dateLocale = await getLocale();
   const { supabase, user, profile, companies, company, fullName } =
     await getDashboardContext();
 
@@ -49,22 +53,22 @@ export default async function DashboardOverviewPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Overview"
-        title={primaryCompany ? primaryCompany.name : "Welcome to the Alliance"}
+        eyebrow={t("overview")}
+        title={primaryCompany ? primaryCompany.name : t("welcome")}
         description={
           <>
             {fullName ? `${fullName} · ` : ""}
             {user.email}
             {primaryCompany?.is_anonymous && (
               <Badge variant="secondary" className="ml-2 align-middle">
-                Anonymous
+                {tn("anonymous")}
               </Badge>
             )}
           </>
         }
         actions={
           <ButtonLink href="/pain-index" variant="outline">
-            Public Pain Index
+            {t("publicPain")}
             <ArrowUpRight />
           </ButtonLink>
         }
@@ -78,16 +82,16 @@ export default async function DashboardOverviewPage() {
                 id="war-room-heading"
                 className="text-lg font-bold uppercase tracking-widest"
               >
-                The War Room
+                {t("warRoom")}
               </h2>
               <span className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="size-2 animate-pulse rounded-full bg-primary" />
-                Live campaign
+                {t("liveCampaign")}
               </span>
             </div>
             <BurdenAlertCard
               letterInput={{
-                companyName: primaryCompany?.name ?? "Our company",
+                companyName: primaryCompany?.name ?? t("ourCompany"),
                 industry: primaryCompany?.industry ?? null,
                 turnoverBand: primaryCompany?.turnover_band ?? null,
                 estimatedCostEur:
@@ -105,7 +109,7 @@ export default async function DashboardOverviewPage() {
               id="submissions-heading"
               className="text-lg font-bold uppercase tracking-widest"
             >
-              Your Pain Index Contributions
+              {t("contributions")}
             </h2>
             <Card>
               <CardHeader className="flex-row items-start justify-between space-y-0">
@@ -113,29 +117,28 @@ export default async function DashboardOverviewPage() {
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="size-5 text-primary" aria-hidden="true" />
                     {submissions.length}{" "}
-                    {submissions.length === 1 ? "submission" : "submissions"}
+                    {submissions.length === 1 ? t("submission") : t("submissions")}
                   </CardTitle>
                   <CardDescription className="mt-1.5">
-                    Total documented burden:{" "}
+                    {t("totalBurden")}{" "}
                     <span className="font-mono font-semibold text-foreground">
-                      {formatEur(totalCost)}
+                      {formatEur(totalCost, dateLocale)}
                     </span>{" "}
-                    per year
+                    {t("perYear")}
                   </CardDescription>
                 </div>
                 <ButtonLink href="/join" variant="outline" size="sm">
                   <Plus />
-                  Add company
+                  {t("addCompany")}
                 </ButtonLink>
               </CardHeader>
               <CardContent>
                 {submissions.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    No regulatory pain recorded yet.{" "}
+                    {t("noSubmissions")}{" "}
                     <Link href="/join" className="underline underline-offset-4">
-                      Add your first submission
+                      {t("addFirst")}
                     </Link>
-                    .
                   </p>
                 ) : (
                   <ul className="divide-y divide-border">
@@ -154,10 +157,10 @@ export default async function DashboardOverviewPage() {
                             </p>
                             <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Building2 className="size-3.5" aria-hidden="true" />
-                              {company?.name ?? "Unknown company"} ·{" "}
+                              {company?.name ?? t("unknownCompany")} ·{" "}
                               {new Date(
                                 submission.created_at,
-                              ).toLocaleDateString("en-GB", {
+                              ).toLocaleDateString(dateLocale, {
                                 day: "numeric",
                                 month: "short",
                                 year: "numeric",
@@ -171,9 +174,9 @@ export default async function DashboardOverviewPage() {
                           </div>
                           <p className="flex shrink-0 items-center gap-1 font-mono text-lg font-bold tabular-nums">
                             <Euro className="size-4 text-primary" aria-hidden="true" />
-                            {formatEur(toNumber(submission.estimated_cost_eur))}
+                            {formatEur(toNumber(submission.estimated_cost_eur), dateLocale)}
                             <span className="text-xs font-normal text-muted-foreground">
-                              /yr
+                              {t("perYearShort")}
                             </span>
                           </p>
                         </li>
@@ -192,7 +195,7 @@ export default async function DashboardOverviewPage() {
               id="referral-heading"
               className="text-lg font-bold uppercase tracking-widest"
             >
-              Referral Tracker
+              {t("referral")}
             </h2>
             <ReferralTracker
               referralCode={referralCode}
@@ -202,25 +205,21 @@ export default async function DashboardOverviewPage() {
 
           <Card className="bg-secondary/40">
             <CardHeader>
-              <CardTitle className="text-base">Full Membership includes</CardTitle>
+              <CardTitle className="text-base">{t("membershipIncludes")}</CardTitle>
             </CardHeader>
             <CardContent>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 <li className="flex gap-2">
-                  <span className="text-primary">▸</span> Quarterly MEP briefing
-                  calls with the ERBA policy team
+                  <span className="text-primary">▸</span> {t("perk1")}
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-primary">▸</span> The Cumulative Burden
-                  Report before public release
+                  <span className="text-primary">▸</span> {t("perk2")}
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-primary">▸</span> A seat in the annual
-                  Brussels CEO delegation
+                  <span className="text-primary">▸</span> {t("perk3")}
                 </li>
                 <li className="flex gap-2">
-                  <span className="text-primary">▸</span> Objection-letter
-                  templates for every new Green Deal act
+                  <span className="text-primary">▸</span> {t("perk4")}
                 </li>
               </ul>
             </CardContent>

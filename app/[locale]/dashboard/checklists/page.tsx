@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getTranslations } from "next-intl/server";
 import { getChecklistTemplate } from "@/lib/compliance-templates";
 import { getDashboardContext } from "@/lib/dashboard";
 import type { ComplianceTask } from "@/types/database";
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ChecklistsPage() {
+  const t = await getTranslations("dashboard");
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {
@@ -27,7 +29,7 @@ export default async function ChecklistsPage() {
           icon={Building2}
           title="Register a company first"
           description="Checklists are generated per company and industry. Complete onboarding to provision yours."
-          action={<ButtonLink href="/join">Complete onboarding</ButtonLink>}
+          action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
     );

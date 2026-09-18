@@ -1,6 +1,6 @@
 import * as React from "react";
-import Link from "next/link";
 import { cva, type VariantProps } from "class-variance-authority";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(

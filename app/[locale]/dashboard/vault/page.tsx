@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getTranslations } from "next-intl/server";
 import { getDashboardContext } from "@/lib/dashboard";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function VaultPage() {
+  const t = await getTranslations("dashboard");
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {
@@ -23,7 +25,7 @@ export default async function VaultPage() {
           icon={Building2}
           title="Register a company first"
           description="The vault is scoped to your organisation. Complete onboarding to start storing compliance evidence."
-          action={<ButtonLink href="/join">Complete onboarding</ButtonLink>}
+          action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
     );
