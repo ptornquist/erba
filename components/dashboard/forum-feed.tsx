@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Textarea } from "@/components/ui/textarea";
+import { humaniseSupabaseError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
@@ -110,9 +111,7 @@ export function ForumFeed({ company, initialPosts }: ForumFeedProps) {
       reset();
     } catch (err) {
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not publish your post. Please try again.",
+        humaniseSupabaseError(err, "Could not publish your post. Please try again."),
       );
     }
   }
@@ -132,9 +131,7 @@ export function ForumFeed({ company, initialPosts }: ForumFeedProps) {
         [...prev, post].sort((a, b) => b.created_at.localeCompare(a.created_at)),
       );
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not delete the post. Please try again.",
+        humaniseSupabaseError(err, "Could not delete the post. Please try again."),
       );
     }
   }

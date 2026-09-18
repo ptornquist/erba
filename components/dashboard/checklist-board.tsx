@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { humaniseSupabaseError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
@@ -96,9 +97,7 @@ export function ChecklistBoard({
         ),
       );
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not update the task. Please try again.",
+        humaniseSupabaseError(err, "Could not update the task. Please try again."),
       );
     } finally {
       markPending(task.id, false);
@@ -118,9 +117,7 @@ export function ChecklistBoard({
     } catch (err) {
       setTasks((prev) => [...prev, task]);
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not remove the task. Please try again.",
+        humaniseSupabaseError(err, "Could not remove the task. Please try again."),
       );
     }
   }
@@ -143,9 +140,7 @@ export function ChecklistBoard({
       reset();
     } catch (err) {
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not add the task. Please try again.",
+        humaniseSupabaseError(err, "Could not add the task. Please try again."),
       );
     }
   }

@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { humaniseSupabaseError } from "@/lib/errors";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
@@ -143,9 +144,7 @@ export function DocumentVault({
       closeUpload();
     } catch (err) {
       setUploadError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Upload failed. Please try again.",
+        humaniseSupabaseError(err, "Upload failed. Please try again."),
       );
     } finally {
       setUploading(false);
@@ -167,9 +166,7 @@ export function DocumentVault({
         [...prev, doc].sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at)),
       );
       setError(
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not delete the document. Please try again.",
+        humaniseSupabaseError(err, "Could not delete the document. Please try again."),
       );
     }
   }
@@ -290,7 +287,7 @@ export function DocumentVault({
                     <TableHead>Document</TableHead>
                     <TableHead className="hidden md:table-cell">Category</TableHead>
                     <TableHead className="hidden sm:table-cell">Uploaded</TableHead>
-                    <TableHead className="hidden lg:table-cell">Access</TableHead>
+                    <TableHead className="hidden xl:table-cell">Access</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -319,7 +316,7 @@ export function DocumentVault({
                         <TableCell className="hidden whitespace-nowrap text-muted-foreground sm:table-cell">
                           {dateTime.format(new Date(doc.uploaded_at))}
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell">
+                        <TableCell className="hidden xl:table-cell">
                           <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Lock className="size-3.5" aria-hidden="true" />
                             Company only
