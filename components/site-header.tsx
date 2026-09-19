@@ -46,6 +46,7 @@ export function SiteHeader() {
 
   const navLinks = [
     { href: "/pain-index" as const, label: t("painIndex") },
+    { href: "/playbook" as const, label: t("playbook") },
     { href: "/#why-now" as const, label: t("whyNow") },
   ];
 

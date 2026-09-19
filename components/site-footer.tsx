@@ -47,6 +47,11 @@ export async function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/playbook" className="hover:text-foreground">
+                  {t("playbook")}
+                </Link>
+              </li>
+              <li>
                 <Link href="/dashboard" prefetch={false} className="hover:text-foreground">
                   {t("memberDashboard")}
                 </Link>

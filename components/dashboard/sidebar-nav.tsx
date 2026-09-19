@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import {
+  BookOpen,
   ClipboardCheck,
   FolderLock,
   LayoutDashboard,
@@ -13,10 +14,28 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
-  href: "/dashboard" | "/dashboard/policy" | "/dashboard/checklists" | "/dashboard/vault" | "/dashboard/forum";
-  labelKey: "overview" | "policy" | "checklists" | "vault" | "forum";
-  shortKey: "overview" | "policyShort" | "checklistsShort" | "vaultShort" | "forumShort";
-  descKey: "overviewDesc" | "policyDesc" | "checklistsDesc" | "vaultDesc" | "forumDesc";
+  href:
+    | "/dashboard"
+    | "/dashboard/policy"
+    | "/dashboard/checklists"
+    | "/dashboard/vault"
+    | "/dashboard/forum"
+    | "/playbook";
+  labelKey: "overview" | "policy" | "checklists" | "vault" | "forum" | "playbook";
+  shortKey:
+    | "overview"
+    | "policyShort"
+    | "checklistsShort"
+    | "vaultShort"
+    | "forumShort"
+    | "playbookShort";
+  descKey:
+    | "overviewDesc"
+    | "policyDesc"
+    | "checklistsDesc"
+    | "vaultDesc"
+    | "forumDesc"
+    | "playbookDesc";
   icon: LucideIcon;
   exact?: boolean;
 }
@@ -28,6 +47,14 @@ const DASHBOARD_NAV: NavItem[] = [
     shortKey: "overview",
     descKey: "overviewDesc",
     icon: LayoutDashboard,
+    exact: true,
+  },
+  {
+    href: "/playbook",
+    labelKey: "playbook",
+    shortKey: "playbookShort",
+    descKey: "playbookDesc",
+    icon: BookOpen,
     exact: true,
   },
   {
