@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-import { routing, localizePath, stripLocalePrefix } from "@/i18n/routing";
+import { routing, localizePath, stripLocalePrefix, hasRetiredLocalePrefix } from "@/i18n/routing";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase-config";
 import type { Database } from "@/types/database";
 
@@ -12,11 +12,19 @@ function isProtectedPath(pathname: string): boolean {
 }
 
 /**
- * Locale routing + Supabase session refresh. Unauthenticated visitors to
- * the dashboard are sent to the localized /login page.
+ * Session refresh. Unauthenticated visitors to
+ * the dashboard are sent to /login.
  */
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (hasRetiredLocalePrefix(pathname)) {
+    const { pathname: stripped } = stripLocalePrefix(pathname);
+    const url = request.nextUrl.clone();
+    url.pathname = stripped;
+    return NextResponse.redirect(url, 308);
+  }
+
   const skipIntl =
     pathname.startsWith("/auth") || pathname.startsWith("/api");
 

@@ -8,7 +8,6 @@ High-velocity advocacy platform for mid-cap CEOs documenting the cumulative cost
 - Shadcn-style primitives implemented directly in `components/ui`
 - Supabase (Auth + Postgres) via `@supabase/supabase-js` and `@supabase/ssr`
 - `react-hook-form` + `zod` for validation · `lucide-react` icons
-- `next-intl` for all 24 official EU languages (`localePrefix: 'as-needed'`; English is unprefixed)
 
 ## Getting started
 
@@ -32,8 +31,6 @@ npm run dev
 | `/dashboard/vault` | Secure Document Vault – `document_vault` data table, mock upload, CSV export |
 | `/dashboard/forum` | Alliance Networking Hub – members-only `forum_posts` feed and composer |
 | `/pain-index` | Public data viz: total documented cost + leaderboard by regulation          |
-
-Other official EU languages use a prefix: `/de`, `/fr`, `/pl`, … (`/de/login`, `/fr/pain-index`). A language switcher in the header keeps the current page.
 
 Contact: `contact@euregburden.org`.
 
@@ -69,6 +66,6 @@ app/auth/callback   exchanges email-confirmation code for a session
 lib/supabase.ts      browser client
 lib/supabase-server.ts  server + public (anon) clients
 lib/validations/     zod schemas
-proxy.ts             locale routing, session refresh + /dashboard → /login guard
+proxy.ts             session refresh + /dashboard → /login guard
 types/database.ts    strict table types
 ```

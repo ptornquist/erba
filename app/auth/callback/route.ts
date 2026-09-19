@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { isLocale, localizePath, routing } from "@/i18n/routing";
+import { stripLocalePrefix } from "@/i18n/routing";
 
 /**
  * Completes email confirmation / magic-link sign-in.
@@ -12,17 +12,12 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next") ?? "/dashboard";
-  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
-  const locale =
-    cookieLocale && isLocale(cookieLocale)
-      ? cookieLocale
-      : routing.defaultLocale;
-  const loginPath = localizePath(locale, "/login");
+  const loginPath = "/login";
 
   const next =
     nextParam.startsWith("/") && !nextParam.startsWith("//")
-      ? nextParam
-      : localizePath(locale, "/dashboard");
+      ? stripLocalePrefix(nextParam).pathname
+      : "/dashboard";
 
   if (!isSupabaseConfigured) {
     return NextResponse.redirect(`${origin}${loginPath}`);
