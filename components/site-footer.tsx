@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { ShieldAlert } from "lucide-react";
 import { Link } from "@/i18n/navigation";
+import { SocialLinks } from "@/components/social-links";
 import { CONTACT_EMAIL, SITE_FULL_NAME, SITE_NAME } from "@/lib/constants";
 
 export async function SiteFooter() {
@@ -20,6 +21,10 @@ export async function SiteFooter() {
           <p className="text-sm text-muted-foreground">
             {SITE_FULL_NAME}. {t("blurb")}
           </p>
+          <div className="space-y-2 pt-1">
+            <p className="text-sm font-semibold text-foreground">{t("follow")}</p>
+            <SocialLinks />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
