@@ -23,8 +23,8 @@ export default async function LoginPage({
 }: {
   params: Promise<{ locale: string }>;
 }) {
-  await loadLocale(params);
-  const t = await getTranslations("login");
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "login" });
 
   return (
     <section className="relative flex-1 overflow-hidden bg-grid py-12 sm:py-16 lg:py-20">

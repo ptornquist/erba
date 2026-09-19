@@ -22,7 +22,7 @@ export default async function LandingPage({
   params: Promise<{ locale: string }>;
 }) {
   const locale = await loadLocale(params);
-  const t = await getTranslations("landing");
+  const t = await getTranslations({ locale, namespace: "landing" });
   const dateLocale = locale;
 
   const whyNow = [

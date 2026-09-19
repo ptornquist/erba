@@ -6,16 +6,22 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTranslations } from "next-intl/server";
-import { getChecklistTemplate } from "@/lib/compliance-templates";
 import { getDashboardContext } from "@/lib/dashboard";
+import { getChecklistTemplate } from "@/lib/compliance-templates";
+import { loadLocale } from "@/i18n/load-locale";
 import type { ComplianceTask } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Compliance Checklists",
 };
 
-export default async function ChecklistsPage() {
-  const t = await getTranslations("dashboard");
+export default async function ChecklistsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {

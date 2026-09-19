@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { ArrowUpRight, Building2, Euro, FileText, Plus } from "lucide-react";
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
@@ -15,17 +15,29 @@ import {
 } from "@/components/ui/card";
 import { Link } from "@/i18n/navigation";
 import { getDashboardContext } from "@/lib/dashboard";
+import { loadLocale } from "@/i18n/load-locale";
 import { formatEur, toNumber } from "@/lib/utils";
 import type { PainSubmission } from "@/types/database";
 
-export const metadata: Metadata = {
-  title: "Overview",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
+  return { title: t("overview") };
+}
 
-export default async function DashboardOverviewPage() {
-  const t = await getTranslations("dashboard");
-  const tn = await getTranslations("dashboardNav");
-  const dateLocale = await getLocale();
+export default async function DashboardOverviewPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
+  const tn = await getTranslations({ locale, namespace: "dashboardNav" });
+  const dateLocale = locale;
   const { supabase, user, profile, companies, company, fullName } =
     await getDashboardContext();
 

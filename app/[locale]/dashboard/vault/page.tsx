@@ -8,13 +8,19 @@ import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTranslations } from "next-intl/server";
 import { getDashboardContext } from "@/lib/dashboard";
+import { loadLocale } from "@/i18n/load-locale";
 
 export const metadata: Metadata = {
   title: "Document Vault",
 };
 
-export default async function VaultPage() {
-  const t = await getTranslations("dashboard");
+export default async function VaultPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {
