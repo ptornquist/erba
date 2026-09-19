@@ -32,7 +32,9 @@
     "mercosur": "Amenințarea Mercosur",
     "rights": "Toate drepturile rezervate.",
     "anonymousNote": "Trimiterile anonime nu sunt niciodată atribuite unei companii identificate.",
-    "cities": "Bruxelles · Berlin · Paris"
+    "cities": "Bruxelles · Berlin · Paris",
+    "follow": "Urmărește ERBA",
+    "onNetwork": "ERBA pe {network}"
   },
   "landing": {
     "badge": "Mișcare deschisă CEO-ilor mid-cap",

@@ -32,7 +32,9 @@
     "mercosur": "Mercosur grėsmė",
     "rights": "Visos teisės saugomos.",
     "anonymousNote": "Anoniminiai pranešimai niekada nepriskiriami įvardytai įmonei.",
-    "cities": "Briuselis · Berlynas · Paryžius"
+    "cities": "Briuselis · Berlynas · Paryžius",
+    "follow": "Sekite ERBA",
+    "onNetwork": "ERBA tinkle {network}"
   },
   "landing": {
     "badge": "Judėjimas atviras mid-cap vadovams",

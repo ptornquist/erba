@@ -32,7 +32,9 @@
     "mercosur": "Mercosuri oht",
     "rights": "Kõik õigused kaitstud.",
     "anonymousNote": "Anonüümseid esitusi ei seostata kunagi nimega ettevõttega.",
-    "cities": "Brüssel · Berliin · Pariis"
+    "cities": "Brüssel · Berliin · Pariis",
+    "follow": "Jälgi ERBA-d",
+    "onNetwork": "ERBA võrgustikus {network}"
   },
   "landing": {
     "badge": "Liikumine avatud mid-cap tegevjuhtidele",

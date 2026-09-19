@@ -32,7 +32,9 @@
     "mercosur": "Ameaça Mercosul",
     "rights": "Todos os direitos reservados.",
     "anonymousNote": "As submissões anónimas nunca são atribuídas a uma empresa identificada.",
-    "cities": "Bruxelas · Berlim · Paris"
+    "cities": "Bruxelas · Berlim · Paris",
+    "follow": "Seguir a ERBA",
+    "onNetwork": "ERBA no {network}"
   },
   "landing": {
     "badge": "Movimento aberto a CEO de mid-caps",

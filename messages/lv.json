@@ -32,7 +32,9 @@
     "mercosur": "Mercosur drauds",
     "rights": "Visas tiesības aizsargātas.",
     "anonymousNote": "Anonīmie iesniegumi nekad netiek piešķirti nosauktai kompānijai.",
-    "cities": "Brisele · Berlīne · Parīze"
+    "cities": "Brisele · Berlīne · Parīze",
+    "follow": "Sekojiet ERBA",
+    "onNetwork": "ERBA vietnē {network}"
   },
   "landing": {
     "badge": "Kustība atvērta mid-cap vadītājiem",

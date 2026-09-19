@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-Bedrohung",
     "rights": "Alle Rechte vorbehalten.",
     "anonymousNote": "Anonyme Meldungen werden niemals einem namentlich genannten Unternehmen zugeordnet.",
-    "cities": "Brüssel · Berlin · Paris"
+    "cities": "Brüssel · Berlin · Paris",
+    "follow": "ERBA folgen",
+    "onNetwork": "ERBA auf {network}"
   },
   "landing": {
     "badge": "Bewegung offen für Mid-Cap-CEOs",

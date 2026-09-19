@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { LogOut, Menu, ShieldAlert, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { SocialLinks } from "@/components/social-links";
 import { Link, usePathname } from "@/i18n/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { hardNavigate } from "@/lib/navigation";
@@ -66,6 +67,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <LanguageSwitcher />
+          <SocialLinks className="hidden md:flex" />
           <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
             {navLinks.map((link) => (
               <Link
@@ -150,6 +152,7 @@ export function SiteHeader() {
                 </ButtonLink>
               </>
             )}
+            <SocialLinks className="pt-1" />
           </div>
         </nav>
       )}

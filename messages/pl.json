@@ -32,7 +32,9 @@
     "mercosur": "Zagrożenie Mercosur",
     "rights": "Wszelkie prawa zastrzeżone.",
     "anonymousNote": "Anonimowe zgłoszenia nigdy nie są przypisywane do nazwanej firmy.",
-    "cities": "Bruksela · Berlin · Paryż"
+    "cities": "Bruksela · Berlin · Paryż",
+    "follow": "Obserwuj ERBA",
+    "onNetwork": "ERBA na {network}"
   },
   "landing": {
     "badge": "Ruch otwarty dla prezesów mid-cap",

@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-trussel",
     "rights": "Alle rettigheder forbeholdes.",
     "anonymousNote": "Anonyme indberetninger tilskrives aldrig en navngivet virksomhed.",
-    "cities": "Bruxelles · Berlin · Paris"
+    "cities": "Bruxelles · Berlin · Paris",
+    "follow": "Følg ERBA",
+    "onNetwork": "ERBA på {network}"
   },
   "landing": {
     "badge": "Bevægelse åben for mid-cap-direktører",

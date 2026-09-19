@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-uhka",
     "rights": "Kaikki oikeudet pidätetään.",
     "anonymousNote": "Anonyymejä ilmoituksia ei koskaan liitetä nimettyyn yritykseen.",
-    "cities": "Bryssel · Berliini · Pariisi"
+    "cities": "Bryssel · Berliini · Pariisi",
+    "follow": "Seuraa ERBAa",
+    "onNetwork": "ERBA palvelussa {network}"
   },
   "landing": {
     "badge": "Liike avoin mid-cap-toimitusjohtajille",

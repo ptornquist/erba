@@ -32,7 +32,9 @@
     "mercosur": "Bagairt Mercosur",
     "rights": "Gach ceart ar cosaint.",
     "anonymousNote": "Ní chuirtear aighneachtaí gan ainm i leith chuideachta ainmnithe riamh.",
-    "cities": "An Bhruiséil · Beirlín · Páras"
+    "cities": "An Bhruiséil · Beirlín · Páras",
+    "follow": "Lean ERBA",
+    "onNetwork": "ERBA ar {network}"
   },
   "landing": {
     "badge": "Gluaiseacht oscailte do POF mid-cap",

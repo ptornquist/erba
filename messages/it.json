@@ -32,7 +32,9 @@
     "mercosur": "Minaccia Mercosur",
     "rights": "Tutti i diritti riservati.",
     "anonymousNote": "Le segnalazioni anonime non sono mai attribuite a un'azienda nominata.",
-    "cities": "Bruxelles · Berlino · Parigi"
+    "cities": "Bruxelles · Berlino · Parigi",
+    "follow": "Segui ERBA",
+    "onNetwork": "ERBA su {network}"
   },
   "landing": {
     "badge": "Movimento aperto ai CEO mid-cap",
