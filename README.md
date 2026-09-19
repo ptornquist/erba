@@ -31,6 +31,7 @@ npm run dev
 | `/dashboard/vault` | Secure Document Vault – `document_vault` data table, mock upload, CSV export |
 | `/dashboard/forum` | Alliance Networking Hub – members-only `forum_posts` feed and composer |
 | `/pain-index` | Public data viz: €0–€1 million scale, total documented cost + leaderboard by regulation          |
+| `/playbook`    | Executive Action Playbook – three-step CEO deployment briefing                         |
 
 Contact: `contact@euregburden.org`.
 
