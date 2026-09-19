@@ -2,12 +2,12 @@ import { getTranslations } from "next-intl/server";
 import {
   ArrowRight,
   BarChart3,
-  Building2,
   Euro,
   FileWarning,
   Leaf,
   Ship,
   Tractor,
+  UserRound,
   Users,
 } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default async function LandingPage({
   ] as const;
 
   const howItWorks = [
-    { icon: Building2, title: t("step1Title"), body: t("step1Body") },
+    { icon: UserRound, title: t("step1Title"), body: t("step1Body") },
     { icon: Euro, title: t("step2Title"), body: t("step2Body") },
     { icon: BarChart3, title: t("step3Title"), body: t("step3Body") },
   ] as const;

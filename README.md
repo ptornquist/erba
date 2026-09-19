@@ -1,6 +1,6 @@
 # ERBA – European Regulatory Burden Alliance
 
-High-velocity advocacy platform for mid-cap CEOs documenting the cumulative cost of EU regulation.
+High-velocity advocacy platform for companies and private individuals documenting the cumulative cost of EU regulation.
 
 ## Stack
 
@@ -24,13 +24,13 @@ npm run dev
 | ------------- | --------------------------------------------------------------------------- |
 | `/`           | Landing page: hero, momentum bar, "Why Now" columns                         |
 | `/login`      | Dedicated member sign-in (unauthenticated dashboard visits land here)       |
-| `/join`       | 3-step onboarding wizard (Account → Company → Pain Index); `?ref=CODE` supported; `?mode=signin` redirects to `/login` |
+| `/join`       | 3-step onboarding wizard (Account → Membership → optional Pain Index); companies and private individuals; `?ref=CODE` supported; `?mode=signin` redirects to `/login` |
 | `/dashboard`  | Overview: War Room + Referral Tracker (auth required, redirects to `/login`) |
 | `/dashboard/policy` | Dynamic Policy Dashboard – `policy_updates` feed with impact filters  |
 | `/dashboard/checklists` | Automated Compliance Checklists – per-company `compliance_tasks`, auto-provisioned from industry templates, toggle/add/remove |
 | `/dashboard/vault` | Secure Document Vault – `document_vault` data table, mock upload, CSV export |
 | `/dashboard/forum` | Alliance Networking Hub – members-only `forum_posts` feed and composer |
-| `/pain-index` | Public data viz: total documented cost + leaderboard by regulation          |
+| `/pain-index` | Public data viz: €0–€1 million scale, total documented cost + leaderboard by regulation          |
 
 Contact: `contact@euregburden.org`.
 

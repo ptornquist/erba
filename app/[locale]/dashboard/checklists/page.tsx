@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getTranslations } from "next-intl/server";
+import { INDIVIDUAL_INDUSTRY } from "@/lib/constants";
 import { getChecklistTemplate } from "@/lib/compliance-templates";
 import { getDashboardContext } from "@/lib/dashboard";
 import type { ComplianceTask } from "@/types/database";
@@ -27,8 +28,8 @@ export default async function ChecklistsPage() {
         />
         <EmptyState
           icon={Building2}
-          title="Register a company first"
-          description="Checklists are generated per company and industry. Complete onboarding to provision yours."
+          title="Finish joining first"
+          description="Checklists are generated for your membership profile. Complete onboarding to provision yours."
           action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
@@ -69,7 +70,11 @@ export default async function ChecklistsPage() {
       <PageHeader
         eyebrow="Automated Compliance Checklists"
         title="Compliance checklist"
-        description={`Obligations generated for ${company.industry} mid-caps plus EU-wide baseline requirements. Tick items as evidence is filed.`}
+        description={
+          company.industry === INDIVIDUAL_INDUSTRY
+            ? "Citizen-relevant obligations you can tick and extend. Add items as they apply to you."
+            : `Obligations generated for ${company.industry} plus EU-wide baseline requirements. Tick items as evidence is filed.`
+        }
       />
 
       {error && (

@@ -23,8 +23,8 @@ export default async function VaultPage() {
         <PageHeader eyebrow="Secure Document Vault" title="Document vault" />
         <EmptyState
           icon={Building2}
-          title="Register a company first"
-          description="The vault is scoped to your organisation. Complete onboarding to start storing compliance evidence."
+          title="Finish joining first"
+          description="The vault is scoped to your membership profile. Complete onboarding to start storing compliance evidence."
           action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>

@@ -1,4 +1,4 @@
-import type { INDUSTRIES } from "@/lib/constants";
+import { INDIVIDUAL_INDUSTRY, INDUSTRIES } from "@/lib/constants";
 
 type Industry = (typeof INDUSTRIES)[number];
 
@@ -90,9 +90,18 @@ const INDUSTRY_TASKS: Partial<Record<Industry, readonly string[]>> = {
     "Assess MiCA licensing requirements for crypto-asset services",
     "Prepare Instant Payments Regulation verification-of-payee",
   ],
+  "Private individual": [
+    "Check whether any organisation you own, advise or work for falls in CSRD or CSDDD scope after Omnibus I",
+    "Review GDPR data-subject rights for personal data you hold as a private person",
+    "Confirm beneficial-ownership reporting if you control a company or foundation",
+    "Document personal due-diligence steps if you trade goods covered by EUDR or CBAM",
+  ],
 };
 
 export function getChecklistTemplate(industry: string): string[] {
   const sectorTasks = INDUSTRY_TASKS[industry as Industry] ?? [];
+  if (industry === INDIVIDUAL_INDUSTRY) {
+    return [...sectorTasks];
+  }
   return [...sectorTasks, ...GENERAL_TASKS];
 }

@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PainIndexScale } from "@/components/pain-index-scale";
 import { REGULATIONS } from "@/lib/constants";
 import { getPainIndexData } from "@/lib/pain-index";
 import { cn, formatEur, formatEurCompact, formatInteger } from "@/lib/utils";
@@ -86,6 +87,15 @@ export default async function PainIndexPage({
           >
             {formatEur(data.totalCostEur, dateLocale)}
           </p>
+          <PainIndexScale
+            totalEur={data.totalCostEur}
+            locale={dateLocale}
+            label={t("scaleLabel")}
+            minLabel={t("scaleMin")}
+            maxLabel={t("scaleMax")}
+            hint={t("scaleHint")}
+            overflowLabel={t("scaleOverflow")}
+          />
           <p className="mt-4 text-muted-foreground">
             {t("approx", {
               compact: formatEurCompact(data.totalCostEur, dateLocale),

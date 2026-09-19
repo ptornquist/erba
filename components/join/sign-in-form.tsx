@@ -82,7 +82,7 @@ export function SignInForm() {
             id="signin-email"
             type="email"
             autoComplete="email"
-            placeholder="ceo@yourcompany.eu"
+            placeholder="you@email.eu"
             aria-invalid={Boolean(errors.email)}
             {...register("email")}
           />

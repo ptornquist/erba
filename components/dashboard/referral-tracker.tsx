@@ -54,7 +54,7 @@ export function ReferralTracker({
   async function share() {
     const shareData = {
       title: "Join the European Regulatory Burden Alliance",
-      text: "Europe's real economy has had enough. Add your company's regulatory cost to the Pain Index.",
+      text: "Europe's real economy has had enough. Join ERBA as a company or a private individual — adding a Pain Index figure is optional.",
       url: shareUrl,
     };
     if (typeof navigator.share === "function") {
