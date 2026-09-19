@@ -1,20 +1,17 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, ShieldAlert, X } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { Link, usePathname } from "@/i18n/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { hardNavigate } from "@/lib/navigation";
-import { localizePath } from "@/i18n/routing";
 import { SITE_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const t = useTranslations("nav");
-  const locale = useLocale();
   const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -43,7 +40,7 @@ export function SiteHeader() {
     if (!isSupabaseConfigured) return;
     await createClient().auth.signOut();
     setIsAuthed(false);
-    hardNavigate(localizePath(locale, "/"));
+    hardNavigate("/");
   }
 
   const navLinks = [
@@ -65,7 +62,6 @@ export function SiteHeader() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <LanguageSwitcher />
           <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
             {navLinks.map((link) => (
               <Link
