@@ -32,7 +32,9 @@
     "mercosur": "Menace Mercosur",
     "rights": "Tous droits réservés.",
     "anonymousNote": "Les déclarations anonymes ne sont jamais attribuées à une entreprise nommée.",
-    "cities": "Bruxelles · Berlin · Paris"
+    "cities": "Bruxelles · Berlin · Paris",
+    "follow": "Suivre ERBA",
+    "onNetwork": "ERBA sur {network}"
   },
   "landing": {
     "badge": "Mouvement ouvert aux PDG de mid-caps",

@@ -14,6 +14,32 @@ LOCALES = [
     "it", "lt", "lv", "mt", "nl", "pl", "pt", "ro", "sk", "sl", "sv",
 ]
 
+FOLLOW = {
+    "bg": {"follow": "Последвайте ERBA", "onNetwork": "ERBA в {network}"},
+    "cs": {"follow": "Sledujte ERBA", "onNetwork": "ERBA na {network}"},
+    "da": {"follow": "Følg ERBA", "onNetwork": "ERBA på {network}"},
+    "de": {"follow": "ERBA folgen", "onNetwork": "ERBA auf {network}"},
+    "el": {"follow": "Ακολουθήστε την ERBA", "onNetwork": "Η ERBA στο {network}"},
+    "es": {"follow": "Seguir a ERBA", "onNetwork": "ERBA en {network}"},
+    "et": {"follow": "Jälgi ERBA-d", "onNetwork": "ERBA võrgustikus {network}"},
+    "fi": {"follow": "Seuraa ERBAa", "onNetwork": "ERBA palvelussa {network}"},
+    "fr": {"follow": "Suivre ERBA", "onNetwork": "ERBA sur {network}"},
+    "ga": {"follow": "Lean ERBA", "onNetwork": "ERBA ar {network}"},
+    "hr": {"follow": "Pratite ERBA", "onNetwork": "ERBA na {network}"},
+    "hu": {"follow": "Kövessétek az ERBA-t", "onNetwork": "ERBA a {network} oldalon"},
+    "it": {"follow": "Segui ERBA", "onNetwork": "ERBA su {network}"},
+    "lt": {"follow": "Sekite ERBA", "onNetwork": "ERBA tinkle {network}"},
+    "lv": {"follow": "Sekojiet ERBA", "onNetwork": "ERBA vietnē {network}"},
+    "mt": {"follow": "Segwi ERBA", "onNetwork": "ERBA fuq {network}"},
+    "nl": {"follow": "Volg ERBA", "onNetwork": "ERBA op {network}"},
+    "pl": {"follow": "Obserwuj ERBA", "onNetwork": "ERBA na {network}"},
+    "pt": {"follow": "Seguir a ERBA", "onNetwork": "ERBA no {network}"},
+    "ro": {"follow": "Urmărește ERBA", "onNetwork": "ERBA pe {network}"},
+    "sk": {"follow": "Sledujte ERBA", "onNetwork": "ERBA na {network}"},
+    "sl": {"follow": "Spremljajte ERBA", "onNetwork": "ERBA na {network}"},
+    "sv": {"follow": "Följ ERBA", "onNetwork": "ERBA på {network}"},
+}
+
 
 def deep_merge(base: dict, overlay: dict) -> dict:
     out = copy.deepcopy(base)
@@ -82,6 +108,8 @@ def main() -> None:
             overlay = T[loc]
         if loc in extra:
             overlay = deep_merge(overlay, extra[loc])
+        if loc in FOLLOW:
+            overlay = deep_merge(overlay, {"footer": FOLLOW[loc]})
         data = deep_merge(EN, overlay)
         (out_dir / f"{loc}.json").write_text(
             json.dumps(data, ensure_ascii=False, indent=2) + "\n",

@@ -32,7 +32,9 @@
     "mercosur": "Theddida Mercosur",
     "rights": "Id-drittijiet kollha riżervati.",
     "anonymousNote": "Sottomissjonijiet anonimi qatt ma jiġu attribwiti lil kumpanija msemmija.",
-    "cities": "Brussell · Berlin · Pariġi"
+    "cities": "Brussell · Berlin · Pariġi",
+    "follow": "Segwi ERBA",
+    "onNetwork": "ERBA fuq {network}"
   },
   "landing": {
     "badge": "Moviment miftuħ għal CEOs mid-cap",

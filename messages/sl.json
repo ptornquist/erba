@@ -32,7 +32,9 @@
     "mercosur": "Grožnja Mercosur",
     "rights": "Vse pravice pridržane.",
     "anonymousNote": "Anonimne predložitve nikoli niso pripisane imenovanemu podjetju.",
-    "cities": "Bruselj · Berlin · Pariz"
+    "cities": "Bruselj · Berlin · Pariz",
+    "follow": "Spremljajte ERBA",
+    "onNetwork": "ERBA na {network}"
   },
   "landing": {
     "badge": "Gibanje odprto za direktorje mid-cap podjetij",

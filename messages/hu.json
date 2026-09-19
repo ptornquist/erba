@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-fenyegetés",
     "rights": "Minden jog fenntartva.",
     "anonymousNote": "A névtelen beküldéseket soha nem kapcsoljuk megnevezett céghez.",
-    "cities": "Brüsszel · Berlin · Párizs"
+    "cities": "Brüsszel · Berlin · Párizs",
+    "follow": "Kövessétek az ERBA-t",
+    "onNetwork": "ERBA a {network} oldalon"
   },
   "landing": {
     "badge": "Mozgalom mid-cap vezérigazgatóknak",

@@ -32,7 +32,9 @@
     "mercosur": "Mercosur Threat",
     "rights": "All rights reserved.",
     "anonymousNote": "Anonymous submissions are never attributed to a named company.",
-    "cities": "Brussels · Berlin · Paris"
+    "cities": "Brussels · Berlin · Paris",
+    "follow": "Follow ERBA",
+    "onNetwork": "ERBA on {network}"
   },
   "landing": {
     "badge": "Movement open for mid-cap CEOs",

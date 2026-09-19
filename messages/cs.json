@@ -32,7 +32,9 @@
     "mercosur": "Hrozba Mercosur",
     "rights": "Všechna práva vyhrazena.",
     "anonymousNote": "Anonymní hlášení nejsou nikdy přiřazena jmenované firmě.",
-    "cities": "Brusel · Berlín · Paříž"
+    "cities": "Brusel · Berlín · Paříž",
+    "follow": "Sledujte ERBA",
+    "onNetwork": "ERBA na {network}"
   },
   "landing": {
     "badge": "Hnutí otevřené pro ředitele mid-cap firem",

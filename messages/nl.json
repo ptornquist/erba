@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-dreiging",
     "rights": "Alle rechten voorbehouden.",
     "anonymousNote": "Anonieme meldingen worden nooit aan een genoemd bedrijf toegeschreven.",
-    "cities": "Brussel · Berlijn · Parijs"
+    "cities": "Brussel · Berlijn · Parijs",
+    "follow": "Volg ERBA",
+    "onNetwork": "ERBA op {network}"
   },
   "landing": {
     "badge": "Beweging open voor mid-cap-CEO's",

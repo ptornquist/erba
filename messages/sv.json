@@ -32,7 +32,9 @@
     "mercosur": "Mercosur-hot",
     "rights": "Alla rättigheter förbehållna.",
     "anonymousNote": "Anonyma bidrag tillskrivs aldrig ett namngivet företag.",
-    "cities": "Bryssel · Berlin · Paris"
+    "cities": "Bryssel · Berlin · Paris",
+    "follow": "Följ ERBA",
+    "onNetwork": "ERBA på {network}"
   },
   "landing": {
     "badge": "Rörelse öppen för mid-cap-vd:ar",

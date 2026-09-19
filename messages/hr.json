@@ -32,7 +32,9 @@
     "mercosur": "Prijetnja Mercosur",
     "rights": "Sva prava pridržana.",
     "anonymousNote": "Anonimne prijave nikad se ne pripisuju imenovanoj tvrtki.",
-    "cities": "Bruxelles · Berlin · Pariz"
+    "cities": "Bruxelles · Berlin · Pariz",
+    "follow": "Pratite ERBA",
+    "onNetwork": "ERBA na {network}"
   },
   "landing": {
     "badge": "Pokret otvoren mid-cap direktorima",
