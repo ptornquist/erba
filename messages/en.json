@@ -243,6 +243,9 @@
   "dashboardNav": {
     "overview": "Overview",
     "overviewDesc": "War Room & referrals",
+    "playbook": "Action Playbook",
+    "playbookShort": "Playbook",
+    "playbookDesc": "Three-step CEO deployment plan",
     "policy": "Policy Dashboard",
     "policyShort": "Policy",
     "policyDesc": "Regulatory intelligence feed",
