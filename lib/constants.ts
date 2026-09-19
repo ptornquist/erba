@@ -2,6 +2,7 @@ export const SITE_NAME = "ERBA";
 export const SITE_FULL_NAME = "European Regulatory Burden Alliance";
 export const SITE_DOMAIN = "euregburden.org";
 export const SITE_URL = `https://${SITE_DOMAIN}`;
+export const CONTACT_EMAIL = `contact@${SITE_DOMAIN}`;
 
 export const REFERRALS_TO_UNLOCK = 5;
 

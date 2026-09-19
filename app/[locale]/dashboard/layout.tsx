@@ -1,21 +1,46 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import { Building2, ShieldCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { MobileNav, SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { INDUSTRIES } from "@/lib/constants";
 import { getDashboardContext } from "@/lib/dashboard";
+import { loadLocale } from "@/i18n/load-locale";
 
-export const metadata: Metadata = {
-  title: { default: "Member Dashboard", template: "%s | ERBA Dashboard" },
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "meta" });
+  return {
+    title: { default: t("dashboardTitle"), template: `%s | ERBA` },
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardLayout({
   children,
-}: LayoutProps<"/dashboard">) {
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ locale: string }>;
+}) {
+  await loadLocale(params);
   const { user, company, fullName } = await getDashboardContext();
+  const t = await getTranslations("dashboardNav");
+  const ti = await getTranslations("industries");
+
+  const industryLabel =
+    company?.industry &&
+    (INDUSTRIES as readonly string[]).includes(company.industry)
+      ? ti(company.industry as (typeof INDUSTRIES)[number])
+      : (company?.industry ?? t("completeOnboarding"));
 
   return (
     <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:gap-8 lg:px-8 lg:py-8">
@@ -28,10 +53,10 @@ export default async function DashboardLayout({
               </span>
               <div className="min-w-0">
                 <p className="truncate font-semibold">
-                  {company?.name ?? "No company yet"}
+                  {company?.name ?? t("noCompany")}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {company?.industry ?? "Complete onboarding"}
+                  {industryLabel}
                 </p>
               </div>
             </div>
@@ -41,11 +66,11 @@ export default async function DashboardLayout({
                 {fullName ?? user.email}
               </span>
               {company?.is_anonymous ? (
-                <Badge variant="secondary">Anonymous</Badge>
+                <Badge variant="secondary">{t("anonymous")}</Badge>
               ) : (
                 <Badge variant="success">
                   <ShieldCheck className="size-3" aria-hidden="true" />
-                  Verified
+                  {t("verified")}
                 </Badge>
               )}
             </div>
@@ -54,9 +79,7 @@ export default async function DashboardLayout({
           <SidebarNav />
 
           <p className="px-3 text-xs leading-relaxed text-muted-foreground">
-            Company-scoped data is protected by Postgres row-level security.
-            Only members of your organisation can read your tasks and
-            documents.
+            {t("rlsNote")}
           </p>
         </div>
       </aside>

@@ -1,26 +1,39 @@
 import { createServerClient } from "@supabase/ssr";
+import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
+import { routing, localizePath, stripLocalePrefix } from "@/i18n/routing";
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/supabase-config";
 import type { Database } from "@/types/database";
 
-const PROTECTED_PREFIXES = ["/dashboard"];
+const intlMiddleware = createIntlMiddleware(routing);
+
+function isProtectedPath(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+}
 
 /**
- * Refreshes the Supabase session cookie on every request and guards
- * protected routes. Unauthenticated visitors are redirected to /join.
+ * Locale routing + Supabase session refresh. Unauthenticated visitors to
+ * the dashboard are sent to the localized /login page.
  */
 export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const { pathname } = request.nextUrl;
+  const skipIntl =
+    pathname.startsWith("/auth") || pathname.startsWith("/api");
+
+  const response = skipIntl
+    ? NextResponse.next({ request })
+    : intlMiddleware(request);
+
+  const { locale, pathname: stripped } = stripLocalePrefix(pathname);
+  const isProtected = isProtectedPath(stripped);
+  const loginPath = localizePath(locale, "/login");
 
   const url = SUPABASE_URL;
   const anonKey = SUPABASE_ANON_KEY;
-  const isProtected = PROTECTED_PREFIXES.some((p) =>
-    request.nextUrl.pathname.startsWith(p),
-  );
 
   if (!url || !anonKey) {
     if (isProtected) {
-      return NextResponse.redirect(new URL("/join", request.url));
+      return NextResponse.redirect(new URL(loginPath, request.url));
     }
     return response;
   }
@@ -34,7 +47,6 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
-        response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
           response.cookies.set(name, value, options),
         );
@@ -47,9 +59,13 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (isProtected && !user) {
-    const redirectUrl = new URL("/join", request.url);
-    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(redirectUrl);
+    const redirectUrl = new URL(loginPath, request.url);
+    redirectUrl.searchParams.set("next", pathname);
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    response.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
+    });
+    return redirectResponse;
   }
 
   return response;
@@ -57,7 +73,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Skip static assets and image optimisation routes.
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

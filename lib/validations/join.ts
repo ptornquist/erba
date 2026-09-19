@@ -1,51 +1,55 @@
 import { z } from "zod";
 import { INDUSTRIES, REGULATIONS, TURNOVER_BANDS } from "@/lib/constants";
 
-export const accountSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(2, "Please enter your full name")
-    .max(120, "Name is too long"),
-  email: z.email("Enter a valid work email address").trim().toLowerCase(),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(72, "Password is too long")
-    .regex(/[A-Za-z]/, "Password must contain a letter")
-    .regex(/[0-9]/, "Password must contain a number"),
-});
+type Translate = (key: string) => string;
 
-export const companySchema = z.object({
-  companyName: z
-    .string()
-    .trim()
-    .min(2, "Please enter your company name")
-    .max(160, "Company name is too long"),
-  industry: z.enum(INDUSTRIES, { error: "Select your industry" }),
-  turnoverBand: z.enum(TURNOVER_BANDS, { error: "Select a turnover band" }),
-  isAnonymous: z.boolean(),
-});
+export function createJoinSchema(t: Translate) {
+  const accountSchema = z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, t("fullName"))
+      .max(120, t("nameLong")),
+    email: z.email(t("email")).trim().toLowerCase(),
+    password: z
+      .string()
+      .min(8, t("passwordShort"))
+      .max(72, t("passwordLong"))
+      .regex(/[A-Za-z]/, t("passwordLetter"))
+      .regex(/[0-9]/, t("passwordNumber")),
+  });
 
-export const painSchema = z.object({
-  regulation: z.enum(REGULATIONS, {
-    error: "Select the regulation that hurts most",
-  }),
-  estimatedCostEur: z
-    .number({ error: "Enter an estimated annual cost in EUR" })
-    .positive("Cost must be greater than zero")
-    .max(1_000_000_000_000, "That number looks too large"),
-  description: z
-    .string()
-    .trim()
-    .max(1000, "Keep the description under 1,000 characters")
-    .optional()
-    .or(z.literal("")),
-});
+  const companySchema = z.object({
+    companyName: z
+      .string()
+      .trim()
+      .min(2, t("companyName"))
+      .max(160, t("companyLong")),
+    industry: z.enum(INDUSTRIES, { error: t("industry") }),
+    turnoverBand: z.enum(TURNOVER_BANDS, { error: t("turnover") }),
+    isAnonymous: z.boolean(),
+  });
 
-export const joinSchema = accountSchema.and(companySchema).and(painSchema);
+  const painSchema = z.object({
+    regulation: z.enum(REGULATIONS, {
+      error: t("regulation"),
+    }),
+    estimatedCostEur: z
+      .number({ error: t("cost") })
+      .positive(t("costPositive"))
+      .max(1_000_000_000_000, t("costLarge")),
+    description: z
+      .string()
+      .trim()
+      .max(1000, t("descriptionLong"))
+      .optional()
+      .or(z.literal("")),
+  });
 
-export type JoinFormValues = z.infer<typeof joinSchema>;
+  return accountSchema.and(companySchema).and(painSchema);
+}
+
+export type JoinFormValues = z.infer<ReturnType<typeof createJoinSchema>>;
 
 export const STEP_FIELDS: ReadonlyArray<ReadonlyArray<keyof JoinFormValues>> = [
   ["name", "email", "password"],
@@ -53,9 +57,11 @@ export const STEP_FIELDS: ReadonlyArray<ReadonlyArray<keyof JoinFormValues>> = [
   ["regulation", "estimatedCostEur", "description"],
 ];
 
-export const signInSchema = z.object({
-  email: z.email("Enter a valid email address").trim().toLowerCase(),
-  password: z.string().min(1, "Enter your password"),
-});
+export function createSignInSchema(t: Translate) {
+  return z.object({
+    email: z.email(t("email")).trim().toLowerCase(),
+    password: z.string().min(1, t("passwordRequired")),
+  });
+}
 
-export type SignInFormValues = z.infer<typeof signInSchema>;
+export type SignInFormValues = z.infer<ReturnType<typeof createSignInSchema>>;

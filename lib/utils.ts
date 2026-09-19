@@ -24,32 +24,36 @@ export function generateReferralCode(length = 6): string {
   return code;
 }
 
-const eurCompact = new Intl.NumberFormat("en-IE", {
-  style: "currency",
-  currency: "EUR",
-  notation: "compact",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 1,
-});
-
-const eurFull = new Intl.NumberFormat("en-IE", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 0,
-});
-
-const integer = new Intl.NumberFormat("en-IE", { maximumFractionDigits: 0 });
-
-export function formatEurCompact(value: number): string {
-  return Math.abs(value) < 1000 ? eurFull.format(value) : eurCompact.format(value);
+function localeTag(locale?: string): string {
+  return locale && locale.length > 0 ? locale : "en-IE";
 }
 
-export function formatEur(value: number): string {
-  return eurFull.format(value);
+export function formatEurCompact(value: number, locale?: string): string {
+  const tag = localeTag(locale);
+  if (Math.abs(value) < 1000) {
+    return formatEur(value, tag);
+  }
+  return new Intl.NumberFormat(tag, {
+    style: "currency",
+    currency: "EUR",
+    notation: "compact",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
-export function formatInteger(value: number): string {
-  return integer.format(value);
+export function formatEur(value: number, locale?: string): string {
+  return new Intl.NumberFormat(localeTag(locale), {
+    style: "currency",
+    currency: "EUR",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+export function formatInteger(value: number, locale?: string): string {
+  return new Intl.NumberFormat(localeTag(locale), {
+    maximumFractionDigits: 0,
+  }).format(value);
 }
 
 /** Coerces PostgREST NUMERIC values (string | number | null) into a finite number. */
