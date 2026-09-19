@@ -31,10 +31,10 @@ export default async function DashboardLayout({
   children: ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  await loadLocale(params);
+  const locale = await loadLocale(params);
   const { user, company, fullName } = await getDashboardContext();
-  const t = await getTranslations("dashboardNav");
-  const ti = await getTranslations("industries");
+  const t = await getTranslations({ locale, namespace: "dashboardNav" });
+  const ti = await getTranslations({ locale, namespace: "industries" });
 
   const industryLabel =
     company?.industry &&

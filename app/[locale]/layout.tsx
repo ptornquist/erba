@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
@@ -56,6 +56,7 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const locale = await loadLocale(params);
+  const messages = await getMessages();
 
   return (
     <html
@@ -63,9 +64,11 @@ export default async function LocaleLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <SiteHeader />
-          <main className="flex flex-1 flex-col">{children}</main>
+          <main key={locale} className="flex flex-1 flex-col">
+            {children}
+          </main>
           <SiteFooter />
         </NextIntlClientProvider>
       </body>

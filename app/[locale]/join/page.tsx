@@ -53,7 +53,7 @@ export default async function JoinPage({
     });
   }
 
-  const t = await getTranslations("join");
+  const t = await getTranslations({ locale, namespace: "join" });
   const assurances = [
     { icon: Timer, title: t("twoMinTitle"), body: t("twoMinBody") },
     { icon: Lock, title: t("anonTitle"), body: t("anonBody") },

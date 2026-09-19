@@ -45,8 +45,8 @@ export default async function PainIndexPage({
   params: Promise<{ locale: string }>;
 }) {
   const locale = await loadLocale(params);
-  const t = await getTranslations("painIndex");
-  const tr = await getTranslations("regulations");
+  const t = await getTranslations({ locale, namespace: "painIndex" });
+  const tr = await getTranslations({ locale, namespace: "regulations" });
   const dateLocale = locale;
   const data = await getPainIndexData();
   const hasData = data.submissionCount > 0;

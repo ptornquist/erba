@@ -75,6 +75,8 @@ def main() -> None:
     out_dir = ROOT / "messages"
     overlays_path = ROOT / "scripts" / "locale-overlays.json"
     extra = json.loads(overlays_path.read_text()) if overlays_path.exists() else {}
+    body_path = ROOT / "scripts" / "body-overlays.json"
+    body = json.loads(body_path.read_text()) if body_path.exists() else {}
 
     for loc in LOCALES:
         overlay: dict = {}
@@ -82,6 +84,8 @@ def main() -> None:
             overlay = T[loc]
         if loc in extra:
             overlay = deep_merge(overlay, extra[loc])
+        if loc in body:
+            overlay = deep_merge(overlay, body[loc])
         data = deep_merge(EN, overlay)
         (out_dir / f"{loc}.json").write_text(
             json.dumps(data, ensure_ascii=False, indent=2) + "\n",
