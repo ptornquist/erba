@@ -1,4 +1,4 @@
-import { SITE_FULL_NAME, SITE_URL } from "@/lib/constants";
+import { INDIVIDUAL_INDUSTRY, SITE_FULL_NAME, SITE_URL } from "@/lib/constants";
 
 export interface ObjectionLetterInput {
   companyName: string;
@@ -27,9 +27,12 @@ export function buildCsrdObjectionLetter(input: ObjectionLetterInput): string {
       ? `Our internal estimate places the annual cost of CSRD compliance for ${input.companyName} at approximately ${eur.format(input.estimatedCostEur)} — resources diverted from investment, hiring and R&D.`
       : `Our internal assessment shows that CSRD compliance consumes a disproportionate share of finance and legal capacity at ${input.companyName} — resources diverted from investment, hiring and R&D.`;
 
+  const isIndividual = input.industry === INDIVIDUAL_INDUSTRY;
   const profileLine = [
-    input.industry ? `operating in ${input.industry}` : null,
-    input.turnoverBand ? `with annual turnover in the ${input.turnoverBand} band` : null,
+    input.industry && !isIndividual ? `operating in ${input.industry}` : null,
+    input.turnoverBand && !isIndividual
+      ? `with annual turnover in the ${input.turnoverBand} band`
+      : null,
   ]
     .filter(Boolean)
     .join(" ");
@@ -45,7 +48,7 @@ export function buildCsrdObjectionLetter(input: ObjectionLetterInput): string {
     ``,
     `Dear Commissioner,`,
     ``,
-    `I write on behalf of ${input.companyName}, a European mid-cap company${profileLine ? ` ${profileLine}` : ""}, and as a member of the ${SITE_FULL_NAME}.`,
+    `I write on behalf of ${input.companyName}, ${isIndividual ? "a European resident" : "a European company"}${profileLine ? ` ${profileLine}` : ""}, and as a member of the ${SITE_FULL_NAME}.`,
     ``,
     `We support transparent, comparable sustainability information. We do not support a regime whose reporting obligations now exceed, in staff hours and external fees, the value of the information produced. ${costLine}`,
     ``,

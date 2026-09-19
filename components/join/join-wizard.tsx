@@ -23,13 +23,22 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/form-field";
+import { PainCostField } from "@/components/join/pain-cost-field";
 import { Link } from "@/i18n/navigation";
 import { localizePath, stripLocalePrefix } from "@/i18n/routing";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
-import { INDUSTRIES, REGULATIONS, TURNOVER_BANDS } from "@/lib/constants";
+import {
+  COMPANY_INDUSTRIES,
+  INDIVIDUAL_INDUSTRY,
+  INDIVIDUAL_TURNOVER,
+  MEMBER_TYPES,
+  REGULATIONS,
+  TURNOVER_BANDS,
+} from "@/lib/constants";
 import {
   createJoinSchema,
-  STEP_FIELDS,
+  hasPainContribution,
+  stepFields,
   type JoinFormValues,
 } from "@/lib/validations/join";
 import { humaniseSupabaseError } from "@/lib/errors";
@@ -68,11 +77,12 @@ export function JoinWizard() {
       name: "",
       email: "",
       password: "",
+      memberType: undefined,
       companyName: "",
       industry: undefined,
       turnoverBand: undefined,
       isAnonymous: false,
-      regulation: undefined,
+      regulation: "",
       estimatedCostEur: undefined,
       description: "",
     },
@@ -88,10 +98,14 @@ export function JoinWizard() {
   } = form;
 
   const isAnonymous = useWatch({ control, name: "isAnonymous" });
+  const memberType = useWatch({ control, name: "memberType" });
+  const estimatedCostEur = useWatch({ control, name: "estimatedCostEur" });
   const isLastStep = step === steps.length - 1;
 
   async function goNext() {
-    const valid = await trigger(STEP_FIELDS[step], { shouldFocus: true });
+    const valid = await trigger(stepFields(step, memberType), {
+      shouldFocus: true,
+    });
     if (valid) {
       setSubmitError(null);
       setStep((s) => Math.min(s + 1, steps.length - 1));
@@ -108,6 +122,13 @@ export function JoinWizard() {
     return localizePath(locale, pathname);
   }
 
+  async function skipPainAndJoin() {
+    setValue("regulation", "");
+    setValue("estimatedCostEur", undefined);
+    setValue("description", "");
+    await handleSubmit(onSubmit)();
+  }
+
   async function onSubmit(values: JoinFormValues) {
     setSubmitError(null);
 
@@ -118,16 +139,29 @@ export function JoinWizard() {
 
     try {
       const supabase = createClient();
+      const joiningAsIndividual = values.memberType === "individual";
+      const includePain = hasPainContribution(values);
+      const organisationName = joiningAsIndividual
+        ? values.name
+        : values.companyName.trim();
+      const industry = joiningAsIndividual
+        ? INDIVIDUAL_INDUSTRY
+        : (values.industry as string);
+      const turnoverBand = joiningAsIndividual
+        ? INDIVIDUAL_TURNOVER
+        : (values.turnoverBand as string);
 
       const onboarding = {
         full_name: values.name,
-        company_name: values.companyName,
-        industry: values.industry,
-        turnover_band: values.turnoverBand,
+        member_type: values.memberType,
+        company_name: organisationName,
+        industry,
+        turnover_band: turnoverBand,
         is_anonymous: values.isAnonymous,
-        regulation_name: values.regulation,
-        estimated_cost_eur: values.estimatedCostEur,
-        description: values.description ? values.description : null,
+        regulation_name: includePain ? values.regulation : null,
+        estimated_cost_eur: includePain ? values.estimatedCostEur : null,
+        description:
+          includePain && values.description ? values.description : null,
         referred_by: referredBy,
       };
 
@@ -186,24 +220,26 @@ export function JoinWizard() {
           .from("companies")
           .insert({
             profile_id: user.id,
-            name: values.companyName,
-            industry: values.industry,
-            turnover_band: values.turnoverBand,
+            name: organisationName,
+            industry,
+            turnover_band: turnoverBand,
             is_anonymous: values.isAnonymous,
           })
           .select("id")
           .single();
         if (companyError) throw companyError;
 
-        const { error: painError } = await supabase
-          .from("pain_submissions")
-          .insert({
-            company_id: company.id,
-            regulation_name: values.regulation,
-            estimated_cost_eur: values.estimatedCostEur,
-            description: values.description ? values.description : null,
-          });
-        if (painError) throw painError;
+        if (includePain && values.regulation && typeof values.estimatedCostEur === "number") {
+          const { error: painError } = await supabase
+            .from("pain_submissions")
+            .insert({
+              company_id: company.id,
+              regulation_name: values.regulation,
+              estimated_cost_eur: values.estimatedCostEur,
+              description: values.description ? values.description : null,
+            });
+          if (painError) throw painError;
+        }
       }
 
       hardNavigate(destinationPath());
@@ -314,7 +350,7 @@ export function JoinWizard() {
             </FormField>
             <FormField
               id="email"
-              label={t("workEmail")}
+              label={t("email")}
               error={errors.email?.message}
               hint={t("emailHint")}
             >
@@ -347,88 +383,152 @@ export function JoinWizard() {
 
         {step === 1 && (
           <fieldset className="space-y-5">
-            <legend className="sr-only">{t("companyDetails")}</legend>
-            <FormField
-              id="companyName"
-              label={t("companyName")}
-              error={errors.companyName?.message}
-            >
-              <Input
-                id="companyName"
-                autoComplete="organization"
-                placeholder={t("placeholderCompany")}
-                aria-invalid={Boolean(errors.companyName)}
-                {...register("companyName")}
-              />
-            </FormField>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                id="industry"
-                label={t("industry")}
-                error={errors.industry?.message}
-              >
-                <Select
-                  id="industry"
-                  defaultValue=""
-                  placeholder={t("selectIndustry")}
-                  aria-invalid={Boolean(errors.industry)}
-                  {...register("industry")}
-                >
-                  {INDUSTRIES.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {ti(industry)}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField
-                id="turnoverBand"
-                label={t("turnover")}
-                error={errors.turnoverBand?.message}
-              >
-                <Select
-                  id="turnoverBand"
-                  defaultValue=""
-                  placeholder={t("selectTurnover")}
-                  aria-invalid={Boolean(errors.turnoverBand)}
-                  {...register("turnoverBand")}
-                >
-                  {TURNOVER_BANDS.map((band) => (
-                    <option key={band} value={band}>
-                      {band}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-            </div>
-            <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background p-4">
-              <div className="space-y-1">
-                <label
-                  htmlFor="isAnonymous"
-                  className="text-sm font-medium leading-none"
-                >
-                  {t("anonymous")}
-                </label>
-                <p className="text-xs text-muted-foreground">{t("anonymousHint")}</p>
+            <legend className="sr-only">{t("membershipDetails")}</legend>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("memberType")}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {MEMBER_TYPES.map((type) => {
+                  const selected = memberType === type;
+                  return (
+                    <label
+                      key={type}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors",
+                        selected
+                          ? "border-primary ring-1 ring-primary"
+                          : "border-border hover:border-primary/50",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        value={type}
+                        className="mt-1 size-4 accent-primary"
+                        {...register("memberType")}
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold">
+                          {t(type === "company" ? "memberCompany" : "memberIndividual")}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {t(
+                            type === "company"
+                              ? "memberCompanyHint"
+                              : "memberIndividualHint",
+                          )}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
               </div>
-              <Switch
-                id="isAnonymous"
-                checked={isAnonymous}
-                onCheckedChange={(checked) =>
-                  setValue("isAnonymous", checked, { shouldDirty: true })
-                }
-              />
+              {errors.memberType?.message && (
+                <p role="alert" className="text-sm text-destructive">
+                  {errors.memberType.message}
+                </p>
+              )}
             </div>
+
+            {memberType === "company" && (
+              <>
+                <FormField
+                  id="companyName"
+                  label={t("companyName")}
+                  error={errors.companyName?.message}
+                >
+                  <Input
+                    id="companyName"
+                    autoComplete="organization"
+                    placeholder={t("placeholderCompany")}
+                    aria-invalid={Boolean(errors.companyName)}
+                    {...register("companyName")}
+                  />
+                </FormField>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormField
+                    id="industry"
+                    label={t("industry")}
+                    error={errors.industry?.message}
+                  >
+                    <Select
+                      id="industry"
+                      defaultValue=""
+                      placeholder={t("selectIndustry")}
+                      aria-invalid={Boolean(errors.industry)}
+                      {...register("industry")}
+                    >
+                      {COMPANY_INDUSTRIES.map((industry) => (
+                        <option key={industry} value={industry}>
+                          {ti(industry)}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    id="turnoverBand"
+                    label={t("turnover")}
+                    error={errors.turnoverBand?.message}
+                  >
+                    <Select
+                      id="turnoverBand"
+                      defaultValue=""
+                      placeholder={t("selectTurnover")}
+                      aria-invalid={Boolean(errors.turnoverBand)}
+                      {...register("turnoverBand")}
+                    >
+                      {TURNOVER_BANDS.map((band) => (
+                        <option key={band} value={band}>
+                          {band}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </div>
+              </>
+            )}
+
+            {memberType && (
+              <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background p-4">
+                <div className="space-y-1">
+                  <label
+                    htmlFor="isAnonymous"
+                    className="text-sm font-medium leading-none"
+                  >
+                    {memberType === "individual"
+                      ? t("anonymousIndividual")
+                      : t("anonymous")}
+                  </label>
+                  <p className="text-xs text-muted-foreground">
+                    {memberType === "individual"
+                      ? t("anonymousIndividualHint")
+                      : t("anonymousHint")}
+                  </p>
+                </div>
+                <Switch
+                  id="isAnonymous"
+                  checked={isAnonymous}
+                  onCheckedChange={(checked) =>
+                    setValue("isAnonymous", checked, { shouldDirty: true })
+                  }
+                />
+              </div>
+            )}
           </fieldset>
         )}
 
         {step === 2 && (
           <fieldset className="space-y-5">
             <legend className="sr-only">{t("painDetails")}</legend>
+            <Alert>
+              <Euro />
+              <AlertTitle>{t("painOptionalTitle")}</AlertTitle>
+              <AlertDescription>{t("painOptionalBody")}</AlertDescription>
+            </Alert>
             <FormField
               id="regulation"
               label={t("regulation")}
               error={errors.regulation?.message}
+              optional
+              optionalLabel={t("optional")}
             >
               <Select
                 id="regulation"
@@ -444,29 +544,19 @@ export function JoinWizard() {
                 ))}
               </Select>
             </FormField>
-            <FormField
+            <PainCostField
               id="estimatedCostEur"
-              label={t("cost")}
+              value={
+                typeof estimatedCostEur === "number" ? estimatedCostEur : undefined
+              }
               error={errors.estimatedCostEur?.message}
-              hint={t("costHint")}
-            >
-              <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                  €
-                </span>
-                <Input
-                  id="estimatedCostEur"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1000}
-                  placeholder={t("placeholderCost")}
-                  className="pl-8 font-mono"
-                  aria-invalid={Boolean(errors.estimatedCostEur)}
-                  {...register("estimatedCostEur", { valueAsNumber: true })}
-                />
-              </div>
-            </FormField>
+              onChange={(value) =>
+                setValue("estimatedCostEur", value, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+            />
             <FormField
               id="description"
               label={t("describe")}
@@ -503,7 +593,7 @@ export function JoinWizard() {
               {t("signIn")}
             </Link>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             {step > 0 && (
               <Button
                 type="button"
@@ -517,24 +607,36 @@ export function JoinWizard() {
               </Button>
             )}
             {isLastStep ? (
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-                className="flex-1 sm:flex-none"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    {t("creating")}
-                  </>
-                ) : (
-                  <>
-                    {t("submit")}
-                    <ArrowRight />
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={isSubmitting}
+                  onClick={skipPainAndJoin}
+                  className="flex-1 sm:flex-none"
+                >
+                  {t("skipPain")}
+                </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-none"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      {t("creating")}
+                    </>
+                  ) : (
+                    <>
+                      {t("submit")}
+                      <ArrowRight />
+                    </>
+                  )}
+                </Button>
+              </>
             ) : (
               <Button
                 type="button"

@@ -25,11 +25,13 @@ security definer
 set search_path = ''
 as $$
 declare
-  meta        jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
-  code        text;
-  attempts    integer := 0;
-  new_company uuid;
-  cost        numeric;
+  meta           jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
+  code           text;
+  attempts       integer := 0;
+  new_company    uuid;
+  cost           numeric;
+  v_member_type  text;
+  v_company_name text;
 begin
   -- Profile (with a unique 6-character referral code).
   loop
@@ -52,16 +54,31 @@ begin
     end;
   end loop;
 
-  -- Company + first pain submission are optional (the wizard always sends
-  -- them, but other sign-up paths may not).
-  if nullif(trim(meta ->> 'company_name'), '') is not null then
+  -- Company + optional first pain submission. Private individuals are stored
+  -- as a company row named after the person so dashboard/RLS keep working.
+  v_member_type := coalesce(nullif(trim(meta ->> 'member_type'), ''), 'company');
+  v_company_name := coalesce(
+    nullif(trim(meta ->> 'company_name'), ''),
+    case
+      when v_member_type = 'individual' then coalesce(nullif(trim(meta ->> 'full_name'), ''), 'Private member')
+      else null
+    end
+  );
+
+  if v_company_name is not null then
     begin
       insert into public.companies (profile_id, name, industry, turnover_band, is_anonymous)
       values (
         new.id,
-        trim(meta ->> 'company_name'),
-        coalesce(nullif(trim(meta ->> 'industry'), ''), 'Other'),
-        coalesce(nullif(trim(meta ->> 'turnover_band'), ''), 'Undisclosed'),
+        v_company_name,
+        coalesce(
+          nullif(trim(meta ->> 'industry'), ''),
+          case when v_member_type = 'individual' then 'Private individual' else 'Other' end
+        ),
+        coalesce(
+          nullif(trim(meta ->> 'turnover_band'), ''),
+          case when v_member_type = 'individual' then 'Private individual' else 'Undisclosed' end
+        ),
         coalesce((meta ->> 'is_anonymous')::boolean, false)
       )
       returning id into new_company;
@@ -69,6 +86,9 @@ begin
       if nullif(trim(meta ->> 'regulation_name'), '') is not null then
         cost := nullif(meta ->> 'estimated_cost_eur', '')::numeric;
         if cost is not null and cost >= 0 then
+          if cost > 1000000 then
+            cost := 1000000;
+          end if;
           insert into public.pain_submissions (company_id, regulation_name, estimated_cost_eur, description)
           values (
             new_company,

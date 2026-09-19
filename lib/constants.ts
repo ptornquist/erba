@@ -6,7 +6,10 @@ export const CONTACT_EMAIL = `contact@${SITE_DOMAIN}`;
 
 export const REFERRALS_TO_UNLOCK = 5;
 
-export const INDUSTRIES = [
+export const MEMBER_TYPES = ["company", "individual"] as const;
+export type MemberType = (typeof MEMBER_TYPES)[number];
+
+export const COMPANY_INDUSTRIES = [
   "Manufacturing",
   "Agriculture & Food",
   "Automotive",
@@ -22,6 +25,14 @@ export const INDUSTRIES = [
   "Other",
 ] as const;
 
+export const INDIVIDUAL_INDUSTRY = "Private individual";
+export const INDIVIDUAL_TURNOVER = "Private individual";
+
+export const INDUSTRIES = [
+  ...COMPANY_INDUSTRIES,
+  INDIVIDUAL_INDUSTRY,
+] as const;
+
 export const TURNOVER_BANDS = [
   "€10M – €50M",
   "€50M – €150M",
@@ -30,6 +41,11 @@ export const TURNOVER_BANDS = [
   "€1B – €5B",
   "€5B+",
 ] as const;
+
+/** Per-submission Pain Index scale shown on join and the public index. */
+export const PAIN_COST_MIN_EUR = 0;
+export const PAIN_COST_MAX_EUR = 1_000_000;
+export const PAIN_COST_STEP_EUR = 1_000;
 
 export const REGULATIONS = [
   "CSRD",

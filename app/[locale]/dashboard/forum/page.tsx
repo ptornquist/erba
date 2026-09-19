@@ -24,8 +24,8 @@ export default async function ForumPage() {
         <PageHeader eyebrow="Alliance Networking Hub" title="Networking hub" />
         <EmptyState
           icon={Building2}
-          title="Register a company first"
-          description="Posts are published on behalf of your organisation. Complete onboarding to join the conversation."
+          title="Finish joining first"
+          description="Posts are published on behalf of your membership profile. Complete onboarding to join the conversation."
           action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
