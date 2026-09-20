@@ -40,7 +40,7 @@ The game runs from the local catalog with no backend. To store answers and a pub
 
 `public.puzzles` has RLS enabled and **no anon SELECT**. Only the service-role key used in `src/lib/supabase/admin.ts` can read facit.
 
-`/login` uses the anon/publishable browser client for email + password. `/profile` is protected with `getClaims()`. Confirm sign-ups land on `/auth/callback`.
+`/login` uses the anon/publishable browser client for email + password. `/profile` is a sports archive card (total score, expeditions, featured badges). Identity is checked with `getUser()`; row data comes from `public.profiles` (RLS: own row only). Sign-up inserts a profile via `private.handle_new_user`. Confirm emails land on `/auth/callback`.
 
 ## Layout
 

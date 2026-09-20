@@ -22,6 +22,9 @@ export function SiteHeader() {
           <Link href="/expeditions" className="hover:text-gold">
             Expeditions
           </Link>
+          <Link href="/profile" className="hover:text-gold">
+            Profile
+          </Link>
           <Link href="/login" className="hover:text-gold">
             Logga in
           </Link>
