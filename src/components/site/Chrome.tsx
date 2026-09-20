@@ -13,6 +13,9 @@ export function SiteHeader() {
           </span>
         </Link>
         <nav className="flex shrink-0 items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70 sm:gap-4 sm:text-[11px] sm:tracking-[0.18em]">
+          <Link href="/play" className="hover:text-gold">
+            Play
+          </Link>
           <Link href="/daily" className="hover:text-gold">
             Daily
           </Link>

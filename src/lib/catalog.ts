@@ -1296,3 +1296,9 @@ export function getDailyPuzzle(dateKey: string): Puzzle {
   const index = hashString(`sport-history-clue:${dateKey}`) % puzzles.length;
   return puzzles[index];
 }
+
+export function getRandomPuzzle(excludeId?: string): Puzzle {
+  const pool = excludeId ? puzzles.filter((puzzle) => puzzle.id !== excludeId) : puzzles;
+  const list = pool.length > 0 ? pool : puzzles;
+  return list[Math.floor(Math.random() * list.length)];
+}

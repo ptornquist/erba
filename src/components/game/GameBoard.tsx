@@ -19,12 +19,13 @@ import type { EventOption, PublicPuzzle, Sport } from "@/lib/types";
 interface GameBoardProps {
   puzzle: PublicPuzzle;
   events: EventOption[];
-  mode: "daily" | "expedition";
+  mode: "daily" | "expedition" | "play";
   dateKey?: string;
   expeditionSlug?: string;
   expeditionTitle?: string;
   nextHref?: string;
   nextLabel?: string;
+  onNext?: () => void;
 }
 
 interface Answer {
@@ -57,6 +58,7 @@ export function GameBoard({
   expeditionTitle,
   nextHref,
   nextLabel,
+  onNext,
 }: GameBoardProps) {
   const [cluesRevealed, setCluesRevealed] = React.useState(1);
   const [viewingClue, setViewingClue] = React.useState(1);
@@ -183,7 +185,7 @@ export function GameBoard({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-gold">
-            {mode === "daily" ? "Daily brief" : expeditionTitle}
+            {mode === "daily" ? "Daily brief" : mode === "play" ? "Random plate" : expeditionTitle}
           </p>
           <h1 className="font-serif text-3xl text-paper sm:text-4xl">Identify the plate</h1>
         </div>
@@ -243,6 +245,7 @@ export function GameBoard({
           expeditionTitle={expeditionTitle}
           nextHref={nextHref}
           nextLabel={nextLabel}
+          onNext={onNext}
         />
       )}
     </div>

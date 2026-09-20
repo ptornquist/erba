@@ -25,6 +25,7 @@ interface ScoreCardProps {
   expeditionTitle?: string;
   nextHref?: string;
   nextLabel?: string;
+  onNext?: () => void;
 }
 
 export function ScoreCard({
@@ -37,6 +38,7 @@ export function ScoreCard({
   expeditionTitle,
   nextHref,
   nextLabel,
+  onNext,
 }: ScoreCardProps) {
   const [copied, setCopied] = React.useState(false);
   const line = shareLine({ dateKey, expeditionTitle, breakdown, cluesRevealed });
@@ -102,7 +104,17 @@ export function ScoreCard({
               {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {copied ? "Copied" : "Share"}
             </Button>
-            {nextHref ? (
+            {onNext ? (
+              <Button
+                variant="gold"
+                onClick={() => {
+                  onOpenChange(false);
+                  onNext();
+                }}
+              >
+                {nextLabel ?? "Next plate"}
+              </Button>
+            ) : nextHref ? (
               <Link href={nextHref} className={cn(buttonVariants({ variant: "gold" }))}>
                 {nextLabel ?? "Continue"}
               </Link>

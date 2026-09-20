@@ -43,16 +43,23 @@ export default function HomePage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-3">
         <ModeCard
           kicker="Mode 01"
+          title="Play"
+          body="A random plate from the archive. Name the subject and year, then draw the next file."
+          href="/play"
+          cta="Open a random file"
+        />
+        <ModeCard
+          kicker="Mode 02"
           title="Daily Brief"
           body="One plate, worldwide, reset at UTC midnight. Same clues, same scoring, a share line for the group chat."
           href="/daily"
           cta="Play today"
         />
         <ModeCard
-          kicker="Mode 02"
+          kicker="Mode 03"
           title="Expeditions"
           body="Time-travel campaigns through five eras, from marble Athens to Lusail. Chain the files. Keep the streak of a different kind."
           href="/expeditions"

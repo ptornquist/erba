@@ -4,6 +4,7 @@ A daily sports-history guessing game. You are given progressive archival clues �
 
 ## Modes
 
+- **Play** (`/play`) — random plate from the archive, next file after you score
 - **Daily Brief** (`/daily`) — one UTC puzzle for everyone
 - **Expeditions** (`/expeditions`) — time-travel campaigns through five eras
 
@@ -44,6 +45,7 @@ The game runs from the local catalog with no backend. To store answers and a pub
 ```
 .cursorrules
 src/app/page.tsx                 landing + mode selector
+src/app/play/page.tsx            random plate (PlayPage)
 src/app/daily/page.tsx
 src/app/expeditions/[slug]/page.tsx
 src/app/api/score/route.ts       game scoring

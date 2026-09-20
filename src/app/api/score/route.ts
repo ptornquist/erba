@@ -10,7 +10,7 @@ import { utcDateKey } from "@/lib/utils";
 const payloadSchema = z
   .object({
     puzzleId: z.string().min(1),
-    mode: z.enum(["daily", "expedition"]).optional(),
+    mode: z.enum(["daily", "expedition", "play"]).optional(),
     dateKey: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     yearCorrect: result.isYearCorrect,
   });
 
-  if (result.isFullyCorrect && isSupabaseConfigured) {
+  if (result.isFullyCorrect && isSupabaseConfigured && body.mode !== "play") {
     try {
       const supabase = createPublicSupabaseClient();
       await supabase.from("score_submissions").insert({
