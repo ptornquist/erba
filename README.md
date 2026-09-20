@@ -8,6 +8,7 @@ High-velocity advocacy platform for mid-cap CEOs documenting the cumulative cost
 - Shadcn-style primitives implemented directly in `components/ui`
 - Supabase (Auth + Postgres) via `@supabase/supabase-js` and `@supabase/ssr`
 - `react-hook-form` + `zod` for validation · `lucide-react` icons
+- `next-intl` for all 24 official EU languages (`localePrefix: 'as-needed'`; English is unprefixed)
 
 ## Getting started
 
@@ -23,13 +24,18 @@ npm run dev
 | Route         | Description                                                                 |
 | ------------- | --------------------------------------------------------------------------- |
 | `/`           | Landing page: hero, momentum bar, "Why Now" columns                         |
-| `/join`       | 3-step onboarding wizard (Account → Company → Pain Index); `?ref=CODE` supported; `?mode=signin` for returning members |
-| `/dashboard`  | Overview: War Room + Referral Tracker (auth required, redirects to `/join`) |
+| `/login`      | Dedicated member sign-in (unauthenticated dashboard visits land here)       |
+| `/join`       | 3-step onboarding wizard (Account → Company → Pain Index); `?ref=CODE` supported; `?mode=signin` redirects to `/login` |
+| `/dashboard`  | Overview: War Room + Referral Tracker (auth required, redirects to `/login`) |
 | `/dashboard/policy` | Dynamic Policy Dashboard – `policy_updates` feed with impact filters  |
 | `/dashboard/checklists` | Automated Compliance Checklists – per-company `compliance_tasks`, auto-provisioned from industry templates, toggle/add/remove |
 | `/dashboard/vault` | Secure Document Vault – `document_vault` data table, mock upload, CSV export |
 | `/dashboard/forum` | Alliance Networking Hub – members-only `forum_posts` feed and composer |
 | `/pain-index` | Public data viz: total documented cost + leaderboard by regulation          |
+
+Other official EU languages use a prefix: `/de`, `/fr`, `/pl`, … (`/de/login`, `/fr/pain-index`). A language switcher in the header keeps the current page.
+
+Contact: `contact@euregburden.org`.
 
 ## Database
 
@@ -63,6 +69,6 @@ app/auth/callback   exchanges email-confirmation code for a session
 lib/supabase.ts      browser client
 lib/supabase-server.ts  server + public (anon) clients
 lib/validations/     zod schemas
-proxy.ts             session refresh + /dashboard route guard
+proxy.ts             locale routing, session refresh + /dashboard → /login guard
 types/database.ts    strict table types
 ```

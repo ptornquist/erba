@@ -1,9 +1,10 @@
 import { cache } from "react";
-import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { getLocale } from "next-intl/server";
 import { isSupabaseConfigured, type TypedSupabaseClient } from "@/lib/supabase";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { generateReferralCode } from "@/lib/utils";
+import { redirect } from "@/i18n/navigation";
 import type { Company, Profile } from "@/types/database";
 
 export interface DashboardContext {
@@ -18,13 +19,16 @@ export interface DashboardContext {
 
 /**
  * Resolves the authenticated member, their profile and companies.
- * Redirects to /join when unauthenticated. Cached per request so the layout
+ * Redirects to /login when unauthenticated. Cached per request so the layout
  * and page can both call it without duplicate queries.
  */
 export const getDashboardContext = cache(
   async (): Promise<DashboardContext> => {
+    const locale = await getLocale();
+
     if (!isSupabaseConfigured) {
-      redirect("/join");
+      redirect({ href: "/login", locale });
+      throw new Error("Supabase is not configured");
     }
 
     const supabase = await createServerSupabaseClient();
@@ -33,7 +37,11 @@ export const getDashboardContext = cache(
     } = await supabase.auth.getUser();
 
     if (!user) {
-      redirect("/join?next=/dashboard");
+      redirect({
+        href: { pathname: "/login", query: { next: "/dashboard" } },
+        locale,
+      });
+      throw new Error("Unauthenticated");
     }
 
     const [{ data: existingProfile }, { data: companiesData }] =

@@ -1,7 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -22,15 +23,12 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/form-field";
+import { Link } from "@/i18n/navigation";
+import { localizePath, stripLocalePrefix } from "@/i18n/routing";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
+import { INDUSTRIES, REGULATIONS, TURNOVER_BANDS } from "@/lib/constants";
 import {
-  INDUSTRIES,
-  REGULATIONS,
-  REGULATION_LABELS,
-  TURNOVER_BANDS,
-} from "@/lib/constants";
-import {
-  joinSchema,
+  createJoinSchema,
   STEP_FIELDS,
   type JoinFormValues,
 } from "@/lib/validations/join";
@@ -38,20 +36,26 @@ import { humaniseSupabaseError } from "@/lib/errors";
 import { hardNavigate } from "@/lib/navigation";
 import { cn, generateReferralCode } from "@/lib/utils";
 
-const STEPS = [
-  { title: "Account", description: "Who you are", icon: UserRound },
-  { title: "Company", description: "What you run", icon: Building2 },
-  { title: "Pain Index", description: "What it costs", icon: Euro },
-] as const;
-
-interface JoinWizardProps {
-  onSwitchToSignIn: () => void;
-}
-
-export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
+export function JoinWizard() {
+  const t = useTranslations("wizard");
+  const tv = useTranslations("validation");
+  const ti = useTranslations("industries");
+  const tr = useTranslations("regulations");
+  const tl = useTranslations("login");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const referredBy = searchParams.get("ref")?.trim().toUpperCase() ?? null;
   const nextPath = searchParams.get("next") ?? "/dashboard";
+  const joinSchema = useMemo(
+    () => createJoinSchema((key) => tv(key as Parameters<typeof tv>[0])),
+    [tv],
+  );
+
+  const steps = [
+    { title: t("account"), description: t("accountWho"), icon: UserRound },
+    { title: t("company"), description: t("companyWhat"), icon: Building2 },
+    { title: t("pain"), description: t("painWhat"), icon: Euro },
+  ] as const;
 
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -84,13 +88,13 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   } = form;
 
   const isAnonymous = useWatch({ control, name: "isAnonymous" });
-  const isLastStep = step === STEPS.length - 1;
+  const isLastStep = step === steps.length - 1;
 
   async function goNext() {
     const valid = await trigger(STEP_FIELDS[step], { shouldFocus: true });
     if (valid) {
       setSubmitError(null);
-      setStep((s) => Math.min(s + 1, STEPS.length - 1));
+      setStep((s) => Math.min(s + 1, steps.length - 1));
     }
   }
 
@@ -99,23 +103,22 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
     setStep((s) => Math.max(s - 1, 0));
   }
 
+  function destinationPath() {
+    const { pathname } = stripLocalePrefix(nextPath);
+    return localizePath(locale, pathname);
+  }
+
   async function onSubmit(values: JoinFormValues) {
     setSubmitError(null);
 
     if (!isSupabaseConfigured) {
-      setSubmitError(
-        "This deployment is not connected to Supabase yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY and try again.",
-      );
+      setSubmitError(tl("notConfigured"));
       return;
     }
 
     try {
       const supabase = createClient();
 
-      // The full onboarding payload travels with the auth user so the
-      // `on_auth_user_created` trigger can provision profile/company/pain rows
-      // server-side. That is required when email confirmation is enabled,
-      // because the browser has no session (and therefore no RLS rights) yet.
       const onboarding = {
         full_name: values.name,
         company_name: values.companyName,
@@ -136,7 +139,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
             data: onboarding,
             emailRedirectTo:
               typeof window !== "undefined"
-                ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+                ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(destinationPath())}`
                 : undefined,
           },
         });
@@ -145,26 +148,18 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
       const user = signUpData.user;
       if (!user) {
-        throw new Error("Sign-up succeeded but no user was returned.");
+        throw new Error(t("noUser"));
       }
 
-      // Supabase returns an obfuscated user with no identities when the email
-      // is already registered and confirmation is enabled.
       if (user.identities && user.identities.length === 0) {
-        throw new Error(
-          "An account with this email already exists. Sign in instead.",
-        );
+        throw new Error(t("duplicate"));
       }
 
       if (!signUpData.session) {
-        // Rows are provisioned by the database trigger; the member unlocks
-        // the dashboard once they confirm their email.
         setNeedsEmailConfirmation(true);
         return;
       }
 
-      // Confirmation disabled: we hold a session, so insert directly if the
-      // trigger has not already done it (projects without the trigger).
       const { data: existingProfile } = await supabase
         .from("profiles")
         .select("id")
@@ -211,16 +206,10 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         if (painError) throw painError;
       }
 
-      // Hard navigation so the router cannot reuse a prefetched pre-auth redirect.
-      hardNavigate(nextPath);
+      hardNavigate(destinationPath());
     } catch (err) {
       console.error("Join submission failed", err);
-      setSubmitError(
-        humaniseSupabaseError(
-          err,
-          "Something went wrong while creating your account. Please try again.",
-        ),
-      );
+      setSubmitError(humaniseSupabaseError(err, t("genericError")));
     }
   }
 
@@ -230,20 +219,15 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         <span className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
           <MailCheck className="size-8" aria-hidden="true" />
         </span>
-        <h2 className="text-2xl font-bold tracking-tight">Confirm your email</h2>
+        <h2 className="text-2xl font-bold tracking-tight">{t("confirmTitle")}</h2>
         <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-          Your company and regulatory pain have been recorded. We sent a
-          confirmation link to{" "}
-          <span className="font-medium text-foreground">
-            {form.getValues("email")}
-          </span>
-          . Click it to unlock your member dashboard.
+          {t("confirmBody", { email: form.getValues("email") })}
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <ButtonLink href="/pain-index" variant="outline">
-            View the Pain Index
+            {t("viewPain")}
           </ButtonLink>
-          <Button onClick={onSwitchToSignIn}>I&apos;ve confirmed – sign in</Button>
+          <ButtonLink href="/login">{t("confirmedSignIn")}</ButtonLink>
         </div>
       </div>
     );
@@ -251,8 +235,8 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
   return (
     <div className="rounded-2xl border border-border bg-card">
-      <ol className="grid grid-cols-3 border-b border-border" aria-label="Progress">
-        {STEPS.map(({ title, description, icon: Icon }, index) => {
+      <ol className="grid grid-cols-3 border-b border-border" aria-label={t("progress")}>
+        {steps.map(({ title, description, icon: Icon }, index) => {
           const state =
             index < step ? "complete" : index === step ? "current" : "upcoming";
           return (
@@ -282,7 +266,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
               </span>
               <div className="hidden min-w-0 sm:block">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Step {index + 1}
+                  {t("step", { current: index + 1, total: steps.length })}
                 </p>
                 <p className="truncate text-sm font-semibold">{title}</p>
                 <p className="truncate text-xs text-muted-foreground">
@@ -301,54 +285,53 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
       >
         <div className="sm:hidden">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Step {step + 1} of {STEPS.length}
+            {t("step", { current: step + 1, total: steps.length })}
           </p>
-          <h2 className="text-xl font-bold">{STEPS[step].title}</h2>
+          <h2 className="text-xl font-bold">{steps[step].title}</h2>
         </div>
 
         {referredBy && step === 0 && (
           <Alert>
             <Check />
-            <AlertTitle>Referral applied</AlertTitle>
+            <AlertTitle>{t("referralApplied")}</AlertTitle>
             <AlertDescription>
-              You were invited with code{" "}
-              <span className="font-mono font-semibold">{referredBy}</span>.
+              {t("referralCode", { code: referredBy })}
             </AlertDescription>
           </Alert>
         )}
 
         {step === 0 && (
           <fieldset className="space-y-5">
-            <legend className="sr-only">Account details</legend>
-            <FormField id="name" label="Full name" error={errors.name?.message}>
+            <legend className="sr-only">{t("accountDetails")}</legend>
+            <FormField id="name" label={t("fullName")} error={errors.name?.message}>
               <Input
                 id="name"
                 autoComplete="name"
-                placeholder="Maria Schneider"
+                placeholder={t("placeholderName")}
                 aria-invalid={Boolean(errors.name)}
                 {...register("name")}
               />
             </FormField>
             <FormField
               id="email"
-              label="Work email"
+              label={t("workEmail")}
               error={errors.email?.message}
-              hint="We never publish email addresses."
+              hint={t("emailHint")}
             >
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
-                placeholder="ceo@yourcompany.eu"
+                placeholder={t("placeholderEmail")}
                 aria-invalid={Boolean(errors.email)}
                 {...register("email")}
               />
             </FormField>
             <FormField
               id="password"
-              label="Password"
+              label={t("password")}
               error={errors.password?.message}
-              hint="At least 8 characters, including a letter and a number."
+              hint={t("passwordHint")}
             >
               <Input
                 id="password"
@@ -364,16 +347,16 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
         {step === 1 && (
           <fieldset className="space-y-5">
-            <legend className="sr-only">Company details</legend>
+            <legend className="sr-only">{t("companyDetails")}</legend>
             <FormField
               id="companyName"
-              label="Company name"
+              label={t("companyName")}
               error={errors.companyName?.message}
             >
               <Input
                 id="companyName"
                 autoComplete="organization"
-                placeholder="Schneider Präzisionstechnik GmbH"
+                placeholder={t("placeholderCompany")}
                 aria-invalid={Boolean(errors.companyName)}
                 {...register("companyName")}
               />
@@ -381,32 +364,32 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
             <div className="grid gap-5 sm:grid-cols-2">
               <FormField
                 id="industry"
-                label="Industry"
+                label={t("industry")}
                 error={errors.industry?.message}
               >
                 <Select
                   id="industry"
                   defaultValue=""
-                  placeholder="Select industry"
+                  placeholder={t("selectIndustry")}
                   aria-invalid={Boolean(errors.industry)}
                   {...register("industry")}
                 >
                   {INDUSTRIES.map((industry) => (
                     <option key={industry} value={industry}>
-                      {industry}
+                      {ti(industry)}
                     </option>
                   ))}
                 </Select>
               </FormField>
               <FormField
                 id="turnoverBand"
-                label="Annual turnover"
+                label={t("turnover")}
                 error={errors.turnoverBand?.message}
               >
                 <Select
                   id="turnoverBand"
                   defaultValue=""
-                  placeholder="Select turnover band"
+                  placeholder={t("selectTurnover")}
                   aria-invalid={Boolean(errors.turnoverBand)}
                   {...register("turnoverBand")}
                 >
@@ -424,12 +407,9 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                   htmlFor="isAnonymous"
                   className="text-sm font-medium leading-none"
                 >
-                  Keep my company anonymous
+                  {t("anonymous")}
                 </label>
-                <p className="text-xs text-muted-foreground">
-                  Your cost data still counts in the Pain Index, but your
-                  company name is never displayed publicly.
-                </p>
+                <p className="text-xs text-muted-foreground">{t("anonymousHint")}</p>
               </div>
               <Switch
                 id="isAnonymous"
@@ -444,31 +424,31 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
         {step === 2 && (
           <fieldset className="space-y-5">
-            <legend className="sr-only">Regulatory pain</legend>
+            <legend className="sr-only">{t("painDetails")}</legend>
             <FormField
               id="regulation"
-              label="Worst regulatory burden"
+              label={t("regulation")}
               error={errors.regulation?.message}
             >
               <Select
                 id="regulation"
                 defaultValue=""
-                placeholder="Select the regulation that hurts most"
+                placeholder={t("selectRegulation")}
                 aria-invalid={Boolean(errors.regulation)}
                 {...register("regulation")}
               >
                 {REGULATIONS.map((regulation) => (
                   <option key={regulation} value={regulation}>
-                    {REGULATION_LABELS[regulation]}
+                    {tr(regulation)}
                   </option>
                 ))}
               </Select>
             </FormField>
             <FormField
               id="estimatedCostEur"
-              label="Estimated annual compliance cost (EUR)"
+              label={t("cost")}
               error={errors.estimatedCostEur?.message}
-              hint="Include staff time, consultants, audits, software and legal fees."
+              hint={t("costHint")}
             >
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -480,7 +460,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                   inputMode="numeric"
                   min={1}
                   step={1000}
-                  placeholder="250000"
+                  placeholder={t("placeholderCost")}
                   className="pl-8 font-mono"
                   aria-invalid={Boolean(errors.estimatedCostEur)}
                   {...register("estimatedCostEur", { valueAsNumber: true })}
@@ -489,14 +469,15 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
             </FormField>
             <FormField
               id="description"
-              label="Describe the burden"
+              label={t("describe")}
               optional
+              optionalLabel={t("optional")}
               error={errors.description?.message}
             >
               <Textarea
                 id="description"
                 rows={4}
-                placeholder="e.g. Two FTEs now spend 60% of their time on double-materiality assessments and supplier questionnaires."
+                placeholder={t("placeholderDescription")}
                 aria-invalid={Boolean(errors.description)}
                 {...register("description")}
               />
@@ -507,21 +488,20 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         {submitError && (
           <Alert variant="destructive">
             <AlertCircle />
-            <AlertTitle>Could not complete sign-up</AlertTitle>
+            <AlertTitle>{t("errorTitle")}</AlertTitle>
             <AlertDescription>{submitError}</AlertDescription>
           </Alert>
         )}
 
         <div className="flex flex-col-reverse gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
-            Already a member?{" "}
-            <button
-              type="button"
-              onClick={onSwitchToSignIn}
+            {t("alreadyMember")}{" "}
+            <Link
+              href="/login"
               className="font-medium text-foreground underline-offset-4 hover:underline"
             >
-              Sign in
-            </button>
+              {t("signIn")}
+            </Link>
           </div>
           <div className="flex gap-3">
             {step > 0 && (
@@ -533,7 +513,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 className="flex-1 sm:flex-none"
               >
                 <ArrowLeft />
-                Back
+                {t("back")}
               </Button>
             )}
             {isLastStep ? (
@@ -546,11 +526,11 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin" />
-                    Creating account…
+                    {t("creating")}
                   </>
                 ) : (
                   <>
-                    Join the Alliance
+                    {t("submit")}
                     <ArrowRight />
                   </>
                 )}
@@ -562,7 +542,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 onClick={goNext}
                 className="flex-1 sm:flex-none"
               >
-                Continue
+                {t("continue")}
                 <ArrowRight />
               </Button>
             )}

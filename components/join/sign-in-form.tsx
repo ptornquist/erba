@@ -1,7 +1,8 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, ArrowRight, Loader2 } from "lucide-react";
@@ -9,21 +10,29 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/form-field";
+import { Link } from "@/i18n/navigation";
+import { localizePath, stripLocalePrefix } from "@/i18n/routing";
 import { humaniseSupabaseError } from "@/lib/errors";
 import { hardNavigate } from "@/lib/navigation";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
-import { signInSchema, type SignInFormValues } from "@/lib/validations/join";
+import {
+  createSignInSchema,
+  type SignInFormValues,
+} from "@/lib/validations/join";
 
-interface SignInFormProps {
-  onSwitchToJoin: () => void;
-}
-
-export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
+export function SignInForm() {
+  const t = useTranslations("login");
+  const tv = useTranslations("validation");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const nextPath = searchParams.get("next") ?? "/dashboard";
+  const signInSchema = useMemo(
+    () => createSignInSchema((key) => tv(key as Parameters<typeof tv>[0])),
+    [tv],
+  );
   const [submitError, setSubmitError] = useState<string | null>(
     searchParams.get("error") === "confirmation_failed"
-      ? "That confirmation link is invalid or has expired. Sign in below, or request a new link by signing up again."
+      ? t("confirmationFailed")
       : null,
   );
 
@@ -40,9 +49,7 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
     setSubmitError(null);
 
     if (!isSupabaseConfigured) {
-      setSubmitError(
-        "This deployment is not connected to Supabase yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY and try again.",
-      );
+      setSubmitError(t("notConfigured"));
       return;
     }
 
@@ -53,33 +60,24 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
       });
       if (error) throw error;
 
-      // Hard navigation: the client router may hold a prefetched, pre-auth
-      // redirect for the destination, so bypass its cache entirely.
-      hardNavigate(nextPath);
+      const { pathname } = stripLocalePrefix(nextPath);
+      hardNavigate(localizePath(locale, pathname));
     } catch (err) {
       console.error("Sign-in failed", err);
-      setSubmitError(
-        humaniseSupabaseError(
-          err,
-          "Could not sign you in. Check your credentials and try again.",
-        ),
-      );
+      setSubmitError(humaniseSupabaseError(err, t("genericError")));
     }
   }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-      <h2 className="text-2xl font-bold tracking-tight">Welcome back</h2>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Sign in to access the War Room and your referral tracker.
-      </p>
+      <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
 
       <form
         onSubmit={handleSubmit(onSubmit)}
         noValidate
         className="mt-8 space-y-5"
       >
-        <FormField id="signin-email" label="Email" error={errors.email?.message}>
+        <FormField id="signin-email" label={t("email")} error={errors.email?.message}>
           <Input
             id="signin-email"
             type="email"
@@ -91,7 +89,7 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
         </FormField>
         <FormField
           id="signin-password"
-          label="Password"
+          label={t("password")}
           error={errors.password?.message}
         >
           <Input
@@ -107,7 +105,7 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
         {submitError && (
           <Alert variant="destructive">
             <AlertCircle />
-            <AlertTitle>Sign-in failed</AlertTitle>
+            <AlertTitle>{t("failed")}</AlertTitle>
             <AlertDescription>{submitError}</AlertDescription>
           </Alert>
         )}
@@ -116,11 +114,11 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
           {isSubmitting ? (
             <>
               <Loader2 className="animate-spin" />
-              Signing in…
+              {t("submitting")}
             </>
           ) : (
             <>
-              Sign in
+              {t("submit")}
               <ArrowRight />
             </>
           )}
@@ -128,14 +126,13 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
-        New to ERBA?{" "}
-        <button
-          type="button"
-          onClick={onSwitchToJoin}
+        {t("newTo")}{" "}
+        <Link
+          href="/join"
           className="font-medium text-foreground underline-offset-4 hover:underline"
         >
-          Join free
-        </button>
+          {t("joinFree")}
+        </Link>
       </p>
     </div>
   );
