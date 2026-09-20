@@ -55,10 +55,7 @@ export function totalClueCost(cluesRevealed: number): number {
   return extraCluesFromVisible(cluesRevealed) * PENALTY_PER_CLUE;
 }
 
-export function liveScorePreview(
-  cluesRevealed: number,
-  _wrongEventGuesses = 0,
-): number {
+export function liveScorePreview(cluesRevealed: number): number {
   return Math.max(STARTING_SCORE - totalClueCost(cluesRevealed), MIN_SCORE);
 }
 
