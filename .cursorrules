@@ -1,0 +1,47 @@
+# Sport History Clue
+
+You are building **Sport History Clue**, a daily sports-history guessing game in the spirit of Wordle, Framed, and Heardle.
+
+Players are shown progressive archival clues — a tightly cropped image plate, redacted box-score stats, and period text — and must name the moment and the year. Extra clues, wrong event guesses, and year distance all deduct points. Scoring is authoritative on the server.
+
+## Product rules
+
+- Two modes: **Daily Brief** (one UTC puzzle for everyone) and **Expeditions** (time-travel campaigns through sports eras).
+- A round has up to six clues. Clue 1 is free. Later clues cost points.
+- Guess = event name (fuzzy aliases) + four-digit year.
+- Never ship answers, aliases, or the true year to the client. The catalog is server-only (`src/lib/catalog.ts`).
+- Validate every submitted score in `src/app/api` using `src/lib/scoring.ts`. Do not reimplement formulas in UI code — import the shared helpers that are safe to run on both sides (constants and deduction math without answers).
+- Historical facts must be accurate. Do not use disasters, deaths, or abuse as puzzle subjects.
+- Autocomplete is a large event dictionary, not the day's answer list.
+
+## Stack
+
+- Next.js App Router (src/ directory) · TypeScript strict · Tailwind CSS v4
+- shadcn-style primitives in `src/components/ui` (no Radix `asChild`)
+- Supabase (`src/lib/supabase`) is optional persistence for validated scores; the game must work from the local catalog when env vars are missing
+- Zod for API payloads
+
+## Layout (do not flatten)
+
+```
+src/app/page.tsx                 landing + mode selector
+src/app/daily/page.tsx           daily challenge
+src/app/expeditions/[slug]/page.tsx
+src/app/api/                     scoring validation and public puzzle payloads
+src/components/game/ClueCard.tsx
+src/components/game/InputBar.tsx
+src/components/game/ScoreCard.tsx
+src/lib/scoring.ts
+src/lib/supabase/
+```
+
+## UI
+
+- Visual language: warm archive / newsreel / ticket stub. Aged paper on deep ink.
+- ClueCard must support image zoom/pan and redacted stats that unmask as clues advance.
+- InputBar: year stepper + fuzzy event autocomplete.
+- ScoreCard: post-round modal with breakdown, share line, and next action.
+
+## When changing scoring
+
+Update `src/lib/scoring.ts` and `src/lib/scoring.test.ts` together. Keep the share-card copy in sync with the formula names.
