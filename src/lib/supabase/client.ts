@@ -9,3 +9,13 @@ export function createClient() {
   }
   return createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+
+/**
+ * Client-component helper for auth. `createBrowserClient` is already a singleton.
+ * Import only from `'use client'` modules — never from the server.
+ */
+export const supabaseClient = {
+  get auth() {
+    return createClient().auth;
+  },
+};

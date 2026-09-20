@@ -40,12 +40,15 @@ The game runs from the local catalog with no backend. To store answers and a pub
 
 `public.puzzles` has RLS enabled and **no anon SELECT**. Only the service-role key used in `src/lib/supabase/admin.ts` can read facit.
 
+`/login` uses the anon/publishable browser client for email + password. `/profile` is protected with `getClaims()`. Confirm sign-ups land on `/auth/callback`.
+
 ## Layout
 
 ```
 .cursorrules
 src/app/page.tsx                 landing + mode selector
-src/app/play/page.tsx            random plate (PlayPage)
+src/app/login/page.tsx           email + password (Logga in / Skapa konto)
+src/app/profile/page.tsx
 src/app/daily/page.tsx
 src/app/expeditions/[slug]/page.tsx
 src/app/api/score/route.ts       game scoring
