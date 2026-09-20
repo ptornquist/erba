@@ -135,7 +135,9 @@ export default function ProfilePage() {
                 🏆
               </span>
             </div>
-            <h2 className="mb-1 text-xl font-bold text-white">{displayName}</h2>
+            <h2 className="mb-1 w-full truncate text-xl font-bold text-white" title={displayName}>
+              {displayName}
+            </h2>
             <div className="mb-6 flex items-center gap-1 text-sm font-semibold text-amber-400">
               ✨ {title}
             </div>
