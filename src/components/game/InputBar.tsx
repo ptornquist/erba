@@ -153,7 +153,7 @@ export function InputBar({
                 type="button"
                 className="flex h-6 w-8 items-center justify-center bg-paper text-ink hover:bg-gold"
                 onClick={() => nudgeYear(1)}
-                aria-label="Year up"
+                aria-label="Increase year"
                 disabled={disabled}
               >
                 <ChevronUp className="size-3.5" />
@@ -162,7 +162,7 @@ export function InputBar({
                 type="button"
                 className="flex h-6 w-8 items-center justify-center border-t border-input bg-paper text-ink hover:bg-gold"
                 onClick={() => nudgeYear(-1)}
-                aria-label="Year down"
+                aria-label="Decrease year"
                 disabled={disabled}
               >
                 <ChevronDown className="size-3.5" />
@@ -186,11 +186,11 @@ export function InputBar({
           <Button variant="outline" onClick={onReveal} disabled={disabled}>
             Reveal next clue · −{nextCost}
           </Button>
-        ) : (
-          <Button variant="outline" disabled={disabled} onClick={onGiveUp}>
+        ) : !disabled ? (
+          <Button variant="outline" onClick={onGiveUp}>
             Close the file
           </Button>
-        )}
+        ) : null}
       </div>
     </form>
   );

@@ -4,15 +4,15 @@ export function SiteHeader() {
   return (
     <header className="border-b border-gold/20 bg-ink/80 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
-        <Link href="/" className="group flex items-baseline gap-3">
-          <span className="font-mono text-[10px] uppercase tracking-[0.28em] text-gold">
+        <Link href="/" className="group flex min-w-0 items-baseline gap-2 sm:gap-3">
+          <span className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-gold sm:inline">
             Archive
           </span>
-          <span className="font-serif text-xl text-paper group-hover:text-gold">
+          <span className="truncate font-serif text-lg text-paper group-hover:text-gold sm:text-xl">
             Sport History Clue
           </span>
         </Link>
-        <nav className="flex items-center gap-4 font-mono text-[11px] uppercase tracking-[0.18em] text-paper/70">
+        <nav className="flex shrink-0 items-center gap-3 font-mono text-[10px] uppercase tracking-[0.14em] text-paper/70 sm:gap-4 sm:text-[11px] sm:tracking-[0.18em]">
           <Link href="/daily" className="hover:text-gold">
             Daily
           </Link>
