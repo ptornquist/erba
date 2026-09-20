@@ -83,6 +83,7 @@ export function PlayPage({ initialPuzzle, initialEvents }: PlayPageProps) {
         puzzle={puzzle}
         events={events}
         mode="play"
+        expeditionTitle="Random plate"
         nextLabel="Nästa historiska gåta"
         onNext={() => void loadNewPuzzle()}
       />
