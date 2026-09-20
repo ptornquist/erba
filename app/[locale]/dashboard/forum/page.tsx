@@ -5,7 +5,9 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getTranslations } from "next-intl/server";
 import { getDashboardContext } from "@/lib/dashboard";
+import { loadLocale } from "@/i18n/load-locale";
 
 export const metadata: Metadata = {
   title: "Networking Hub",
@@ -13,7 +15,13 @@ export const metadata: Metadata = {
 
 const FEED_LIMIT = 100;
 
-export default async function ForumPage() {
+export default async function ForumPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {
@@ -24,7 +32,7 @@ export default async function ForumPage() {
           icon={Building2}
           title="Register a company first"
           description="Posts are published on behalf of your organisation. Complete onboarding to join the conversation."
-          action={<ButtonLink href="/join">Complete onboarding</ButtonLink>}
+          action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
     );

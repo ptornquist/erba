@@ -1,23 +1,50 @@
 import { FileQuestion } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button";
+import Link from "next/link";
+import { SITE_NAME } from "@/lib/constants";
 
-export default function NotFound() {
+export default function GlobalNotFound() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 py-24 text-center">
-      <span className="mb-6 flex size-16 items-center justify-center rounded-2xl bg-secondary text-primary">
-        <FileQuestion className="size-8" aria-hidden="true" />
-      </span>
-      <h1 className="text-4xl font-black tracking-tight">Page not found</h1>
-      <p className="mt-3 max-w-md text-muted-foreground">
-        The regulation may be endless, but this URL is not. Let&apos;s get you
-        back to the movement.
-      </p>
-      <div className="mt-8 flex gap-3">
-        <ButtonLink href="/">Back home</ButtonLink>
-        <ButtonLink href="/join" variant="outline">
-          Join Free
-        </ButtonLink>
-      </div>
-    </div>
+    <html lang="en">
+      <body
+        style={{
+          margin: 0,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "system-ui, sans-serif",
+          background: "#ffffff",
+          color: "#0a1628",
+          textAlign: "center",
+          padding: "2rem",
+        }}
+      >
+        <span
+          style={{
+            display: "flex",
+            width: "4rem",
+            height: "4rem",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "1rem",
+            background: "#e8eef8",
+            color: "#003399",
+            marginBottom: "1.5rem",
+          }}
+        >
+          <FileQuestion size={32} aria-hidden="true" />
+        </span>
+        <h1 style={{ fontSize: "2rem", margin: 0 }}>{SITE_NAME}</h1>
+        <p style={{ marginTop: "0.75rem", color: "#4a5d7a", maxWidth: "28rem" }}>
+          Page not found. The regulation may be endless, but this URL is not.
+        </p>
+        <p style={{ marginTop: "1.5rem" }}>
+          <Link href="/" style={{ color: "#003399", fontWeight: 600 }}>
+            Back home
+          </Link>
+        </p>
+      </body>
+    </html>
   );
 }

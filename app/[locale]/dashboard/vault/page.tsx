@@ -6,13 +6,21 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { getTranslations } from "next-intl/server";
 import { getDashboardContext } from "@/lib/dashboard";
+import { loadLocale } from "@/i18n/load-locale";
 
 export const metadata: Metadata = {
   title: "Document Vault",
 };
 
-export default async function VaultPage() {
+export default async function VaultPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = await loadLocale(params);
+  const t = await getTranslations({ locale, namespace: "dashboard" });
   const { supabase, company } = await getDashboardContext();
 
   if (!company) {
@@ -23,7 +31,7 @@ export default async function VaultPage() {
           icon={Building2}
           title="Register a company first"
           description="The vault is scoped to your organisation. Complete onboarding to start storing compliance evidence."
-          action={<ButtonLink href="/join">Complete onboarding</ButtonLink>}
+          action={<ButtonLink href="/join">{t("completeOnboarding")}</ButtonLink>}
         />
       </>
     );

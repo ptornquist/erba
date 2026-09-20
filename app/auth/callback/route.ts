@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { isLocale, localizePath, routing } from "@/i18n/routing";
 
 /**
  * Completes email confirmation / magic-link sign-in.
@@ -11,13 +12,20 @@ export async function GET(request: NextRequest) {
   const { searchParams, origin } = request.nextUrl;
   const code = searchParams.get("code");
   const nextParam = searchParams.get("next") ?? "/dashboard";
-  // Only allow same-origin relative redirects.
-  const next = nextParam.startsWith("/") && !nextParam.startsWith("//")
-    ? nextParam
-    : "/dashboard";
+  const cookieLocale = request.cookies.get("NEXT_LOCALE")?.value;
+  const locale =
+    cookieLocale && isLocale(cookieLocale)
+      ? cookieLocale
+      : routing.defaultLocale;
+  const loginPath = localizePath(locale, "/login");
+
+  const next =
+    nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : localizePath(locale, "/dashboard");
 
   if (!isSupabaseConfigured) {
-    return NextResponse.redirect(`${origin}/join`);
+    return NextResponse.redirect(`${origin}${loginPath}`);
   }
 
   if (code) {
@@ -29,8 +37,7 @@ export async function GET(request: NextRequest) {
     console.error("Auth callback: code exchange failed", error);
   }
 
-  const failure = new URL("/join", origin);
-  failure.searchParams.set("mode", "signin");
+  const failure = new URL(loginPath, origin);
   failure.searchParams.set("error", "confirmation_failed");
   return NextResponse.redirect(failure);
 }

@@ -8,6 +8,7 @@ interface FormFieldProps {
   error?: string;
   hint?: string;
   optional?: boolean;
+  optionalLabel?: string;
   className?: string;
   children: React.ReactNode;
 }
@@ -19,6 +20,7 @@ export function FormField({
   error,
   hint,
   optional,
+  optionalLabel = "Optional",
   className,
   children,
 }: FormFieldProps) {
@@ -27,7 +29,7 @@ export function FormField({
       <div className="flex items-baseline justify-between">
         <Label htmlFor={id}>{label}</Label>
         {optional && (
-          <span className="text-xs text-muted-foreground">Optional</span>
+          <span className="text-xs text-muted-foreground">{optionalLabel}</span>
         )}
       </div>
       {children}
