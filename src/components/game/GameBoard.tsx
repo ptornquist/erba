@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ClueCard } from "@/components/game/ClueCard";
 import { InputBar } from "@/components/game/InputBar";
 import { ScoreCard } from "@/components/game/ScoreCard";
@@ -192,14 +193,19 @@ export function GameBoard({
         />
       )}
 
-      {notice && (
-        <p
-          role="status"
-          className="rounded-md border border-crimson/40 bg-crimson/15 px-4 py-3 text-sm text-paper"
-        >
-          {notice}
-        </p>
-      )}
+      <AnimatePresence>
+        {notice && (
+          <motion.p
+            role="status"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="rounded-md border border-amber/40 bg-crimson/20 px-4 py-3 text-sm text-paper"
+          >
+            {notice}
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       <InputBar
         events={events}

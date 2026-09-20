@@ -10,7 +10,8 @@ Players are shown progressive archival clues — a tightly cropped image plate, 
 - A round has up to six clues. Clue 1 is free. Later clues cost points.
 - Guess = event name (fuzzy aliases) + four-digit year.
 - Never ship answers, aliases, or the true year to the client. The catalog is server-only (`src/lib/catalog.ts`).
-- Validate every submitted score in `src/app/api` using `src/lib/scoring.ts`. Do not reimplement formulas in UI code — import the shared helpers that are safe to run on both sides (constants and deduction math without answers).
+- Validate every submitted score in `src/app/api` using `src/lib/scoring.ts` and `src/lib/normalize.ts`.
+- Answer matching is **server-side only**: strip accents (NFD), case-insensitive, punctuation-folded. Do not trust the client.
 - Historical facts must be accurate. Do not use disasters, deaths, or abuse as puzzle subjects.
 - Autocomplete is a large event dictionary, not the day's answer list.
 
@@ -18,8 +19,14 @@ Players are shown progressive archival clues — a tightly cropped image plate, 
 
 - Next.js App Router (src/ directory) · TypeScript strict · Tailwind CSS v4
 - shadcn-style primitives in `src/components/ui` (no Radix `asChild`)
+- Framer Motion for clue-reveal transitions (`src/components/game/clues/`)
 - Supabase (`src/lib/supabase`) is optional persistence for validated scores; the game must work from the local catalog when env vars are missing
 - Zod for API payloads
+
+## Hard constraints
+
+- **Never** add geographical map libraries (no Leaflet, Mapbox, Cesium, or equivalents). Archive plates are SVG illustrations, not maps.
+- UI stays **dark-mode**: ink backgrounds, gold/amber accents, crisp serif headlines + mono labels.
 
 ## Layout (do not flatten)
 
@@ -29,15 +36,18 @@ src/app/daily/page.tsx           daily challenge
 src/app/expeditions/[slug]/page.tsx
 src/app/api/                     scoring validation and public puzzle payloads
 src/components/game/ClueCard.tsx
+src/components/game/clues/       modular reveal components + Framer Motion
 src/components/game/InputBar.tsx
 src/components/game/ScoreCard.tsx
+src/lib/normalize.ts             accent-stripping answer match
 src/lib/scoring.ts
 src/lib/supabase/
 ```
 
 ## UI
 
-- Visual language: warm archive / newsreel / ticket stub. Aged paper on deep ink.
+- Visual language: dark archive / newsreel. Gold and amber on ink. No light page chrome.
+- Clue reveals must be modular React components with Framer Motion (`ClueReveal`, `ImageClue`, `StatsClue`, `TextClue`, `QuoteClue`).
 - ClueCard must support image zoom/pan and redacted stats that unmask as clues advance.
 - InputBar: year stepper + fuzzy event autocomplete.
 - ScoreCard: post-round modal with breakdown, share line, and next action.

@@ -5,7 +5,8 @@
 
   --ink: #100c08;
   --paper: #f3e6c8;
-  --gold: #c9a227;
+  --gold: #d4a017;
+  --amber: #e8b84a;
   --crimson: #9b1b1e;
 
   --background: #100c08;
@@ -40,6 +41,7 @@
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-gold: var(--gold);
+  --color-amber: var(--amber);
   --color-crimson: var(--crimson);
   --color-background: var(--background);
   --color-foreground: var(--foreground);

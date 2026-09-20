@@ -82,7 +82,7 @@ export function DialogContent({
       aria-describedby={description ? descriptionId : undefined}
       tabIndex={-1}
       className={cn(
-        "relative z-10 w-full max-w-lg rounded-xl border border-gold/40 bg-paper p-6 text-ink shadow-2xl outline-none",
+        "relative z-10 w-full max-w-lg rounded-xl border border-gold/40 bg-card p-6 text-paper shadow-2xl outline-none",
         className,
       )}
       {...props}
@@ -96,7 +96,7 @@ export function DialogContent({
             {title}
           </h2>
           {description && (
-            <p id={descriptionId} className="text-sm text-ink/70">
+            <p id={descriptionId} className="text-sm text-paper/70">
               {description}
             </p>
           )}
@@ -106,7 +106,7 @@ export function DialogContent({
             type="button"
             data-dialog-close
             onClick={onClose}
-            className="rounded-md p-1 text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="rounded-md p-1 text-paper/50 transition-colors hover:bg-gold/15 hover:text-gold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
             aria-label="Close"
           >
             <X className="size-4" />

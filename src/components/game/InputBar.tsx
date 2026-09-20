@@ -68,7 +68,7 @@ export function InputBar({
         <div className="relative">
           <Label htmlFor="event-guess">Event</Label>
           <div className="relative mt-2">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink/40" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gold/60" />
             <Input
               id="event-guess"
               autoComplete="off"
@@ -109,7 +109,7 @@ export function InputBar({
             <ul
               id={listId}
               role="listbox"
-              className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-ink/10 bg-paper py-1 text-ink shadow-xl"
+              className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-md border border-gold/25 bg-ink py-1 text-paper shadow-xl"
             >
               {suggestions.map((option, index) => (
                 <li key={option.id} role="option" aria-selected={index === activeIndex}>
@@ -117,7 +117,7 @@ export function InputBar({
                     type="button"
                     className={cn(
                       "w-full px-3 py-2 text-left text-sm",
-                      index === activeIndex ? "bg-gold/30" : "hover:bg-ink/5",
+                      index === activeIndex ? "bg-gold text-ink" : "hover:bg-gold/10",
                     )}
                     onMouseDown={(mouseEvent) => {
                       mouseEvent.preventDefault();
@@ -151,7 +151,7 @@ export function InputBar({
             <div className="flex flex-col border border-l-0 border-input">
               <button
                 type="button"
-                className="flex h-6 w-8 items-center justify-center bg-paper text-ink hover:bg-gold"
+                className="flex h-6 w-8 items-center justify-center bg-ink text-gold hover:bg-gold hover:text-ink"
                 onClick={() => nudgeYear(1)}
                 aria-label="Increase year"
                 disabled={disabled}
@@ -160,7 +160,7 @@ export function InputBar({
               </button>
               <button
                 type="button"
-                className="flex h-6 w-8 items-center justify-center border-t border-input bg-paper text-ink hover:bg-gold"
+                className="flex h-6 w-8 items-center justify-center border-t border-gold/35 bg-ink text-gold hover:bg-gold hover:text-ink"
                 onClick={() => nudgeYear(-1)}
                 aria-label="Decrease year"
                 disabled={disabled}

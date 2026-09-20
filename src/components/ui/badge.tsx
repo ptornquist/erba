@@ -10,7 +10,7 @@ const badgeVariants = cva(
         default: "border-transparent bg-primary text-primary-foreground",
         gold: "border-transparent bg-gold text-ink",
         outline: "border-border text-foreground",
-        paper: "border-ink/15 bg-paper text-ink",
+        paper: "border-gold/30 bg-ink text-amber",
       },
     },
     defaultVariants: {

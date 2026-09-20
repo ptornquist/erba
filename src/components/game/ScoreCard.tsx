@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import * as React from "react";
+import { motion } from "framer-motion";
 import { Check, Copy } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -61,52 +62,58 @@ export function ScoreCard({
         }
         onClose={() => onOpenChange(false)}
       >
-        {answer && (
-          <div className="rounded-lg border border-ink/10 bg-white/50 p-4">
-            <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink/50">
-              {SPORT_LABEL[answer.sport]} · {answer.year}
-            </p>
-            <p className="mt-1 font-serif text-2xl leading-tight">{answer.title}</p>
-            <p className="mt-2 text-sm leading-relaxed text-ink/70">{answer.summary}</p>
-          </div>
-        )}
-
-        <dl className="mt-5 grid grid-cols-2 gap-2 font-mono text-sm">
-          <Row label="Opening balance" value={`+${breakdown.starting}`} />
-          <Row label="Clues" value={`−${breakdown.clueCost}`} />
-          <Row label="Misses" value={`−${breakdown.wrongGuessCost}`} />
-          <Row label="Year" value={`−${breakdown.yearCost}`} />
-          {breakdown.bonus > 0 && <Row label="Perfect bonus" value={`+${breakdown.bonus}`} />}
-        </dl>
-
-        <p className="mt-4 font-serif text-4xl tabular-nums">{breakdown.total} pts</p>
-        {breakdown.solved && (
-          <p className="text-sm text-ink/60">
-            {breakdown.yearDelta === 0
-              ? "Exact year."
-              : `${breakdown.yearDelta} year${breakdown.yearDelta === 1 ? "" : "s"} off.`}
-          </p>
-        )}
-
-        <pre className="mt-4 overflow-auto rounded-md bg-ink px-3 py-3 font-mono text-[11px] leading-relaxed text-paper">
-          {line}
-        </pre>
-
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button variant="outline" className="border-ink/20 text-ink hover:bg-ink/5" onClick={copy}>
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-            {copied ? "Copied" : "Share"}
-          </Button>
-          {nextHref ? (
-            <Link href={nextHref} className={cn(buttonVariants())}>
-              {nextLabel ?? "Continue"}
-            </Link>
-          ) : (
-            <Link href="/" className={cn(buttonVariants())}>
-              Back to the desk
-            </Link>
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {answer && (
+            <div className="rounded-lg border border-gold/25 bg-ink p-4">
+              <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-gold">
+                {SPORT_LABEL[answer.sport]} · {answer.year}
+              </p>
+              <p className="mt-1 font-serif text-2xl leading-tight text-paper">{answer.title}</p>
+              <p className="mt-2 text-sm leading-relaxed text-paper/70">{answer.summary}</p>
+            </div>
           )}
-        </div>
+
+          <dl className="mt-5 grid grid-cols-2 gap-2 font-mono text-sm">
+            <Row label="Opening balance" value={`+${breakdown.starting}`} />
+            <Row label="Clues" value={`−${breakdown.clueCost}`} />
+            <Row label="Misses" value={`−${breakdown.wrongGuessCost}`} />
+            <Row label="Year" value={`−${breakdown.yearCost}`} />
+            {breakdown.bonus > 0 && <Row label="Perfect bonus" value={`+${breakdown.bonus}`} />}
+          </dl>
+
+          <p className="mt-4 font-serif text-4xl tabular-nums text-gold">{breakdown.total} pts</p>
+          {breakdown.solved && (
+            <p className="text-sm text-paper/60">
+              {breakdown.yearDelta === 0
+                ? "Exact year."
+                : `${breakdown.yearDelta} year${breakdown.yearDelta === 1 ? "" : "s"} off.`}
+            </p>
+          )}
+
+          <pre className="mt-4 overflow-auto rounded-md border border-gold/20 bg-ink px-3 py-3 font-mono text-[11px] leading-relaxed text-amber">
+            {line}
+          </pre>
+
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button variant="outline" onClick={copy}>
+              {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+              {copied ? "Copied" : "Share"}
+            </Button>
+            {nextHref ? (
+              <Link href={nextHref} className={cn(buttonVariants({ variant: "gold" }))}>
+                {nextLabel ?? "Continue"}
+              </Link>
+            ) : (
+              <Link href="/" className={cn(buttonVariants({ variant: "gold" }))}>
+                Back to the desk
+              </Link>
+            )}
+          </div>
+        </motion.div>
       </DialogContent>
     </Dialog>
   );
@@ -114,9 +121,9 @@ export function ScoreCard({
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-md bg-ink/5 px-3 py-2">
-      <dt className="text-[11px] uppercase tracking-[0.14em] text-ink/50">{label}</dt>
-      <dd className="tabular-nums">{value}</dd>
+    <div className="flex items-center justify-between gap-3 rounded-md border border-gold/15 bg-ink/60 px-3 py-2">
+      <dt className="text-[11px] uppercase tracking-[0.14em] text-amber/80">{label}</dt>
+      <dd className="tabular-nums text-paper">{value}</dd>
     </div>
   );
 }

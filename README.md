@@ -13,7 +13,9 @@ Scoring starts at 1000. Clue 1 is free. Later clues, wrong event names, and year
 
 - Next.js App Router (`src/`) · TypeScript · Tailwind CSS v4
 - shadcn-style primitives in `src/components/ui`
+- Framer Motion for clue-reveal transitions
 - Optional Supabase persistence for validated scores
+- No geographical map libraries (plates are SVG, not maps)
 
 ## Getting started
 

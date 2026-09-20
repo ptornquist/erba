@@ -4,7 +4,7 @@ import {
   getPuzzle,
   eventDictionary,
 } from "@/lib/catalog";
-import { eventMatches } from "@/lib/fuzzy";
+import { answersMatch, normalizeAnswer } from "@/lib/normalize";
 import { MAX_CLUES, scoreAttempt } from "@/lib/scoring";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createPublicSupabaseClient } from "@/lib/supabase/server";
@@ -49,7 +49,9 @@ export async function POST(request: Request) {
     return Response.json({ error: "Puzzle is not in that expedition" }, { status: 400 });
   }
 
-  const eventCorrect = eventMatches(body.guessEvent, puzzle.answers);
+  const normalizedGuess = normalizeAnswer(body.guessEvent);
+  const eventCorrect =
+    normalizedGuess.length >= 3 && answersMatch(body.guessEvent, puzzle.answers);
   const giveUp = Boolean(body.giveUp) && !eventCorrect;
   const solved = eventCorrect && !giveUp;
   const breakdown = scoreAttempt({
@@ -103,6 +105,6 @@ export async function POST(request: Request) {
 }
 
 function nearestLabel(guess: string): string | null {
-  const hit = eventDictionary.find((option) => eventMatches(guess, [option.label]));
+  const hit = eventDictionary.find((option) => answersMatch(guess, [option.label]));
   return hit?.label ?? null;
 }

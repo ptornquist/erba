@@ -26,16 +26,16 @@ export default function HomePage() {
             moment and the year before the file spends itself.
           </p>
         </div>
-        <Card className="border-gold/30 bg-paper text-ink">
+        <Card className="border-gold/40 bg-card text-paper">
           <CardHeader>
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-ink/50">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-gold">
               {formatUtcDate(dateKey)}
             </p>
             <CardTitle>Today&apos;s brief</CardTitle>
-            <CardDescription className="text-ink/65">{daily.teaser}</CardDescription>
+            <CardDescription className="text-paper/65">{daily.teaser}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/daily" className={cn(buttonVariants({ variant: "default" }), "w-full")}>
+            <Link href="/daily" className={cn(buttonVariants({ variant: "gold" }), "w-full")}>
               Open the daily file
               <ArrowRight className="size-4" />
             </Link>
