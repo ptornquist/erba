@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { rankEventOptions } from "@/lib/fuzzy";
-import { costForClue } from "@/lib/scoring";
+import { MAX_CLUES, PENALTY_PER_CLUE } from "@/lib/scoring";
 import type { EventOption } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +54,6 @@ export function InputBar({
     setYear(String(Math.min(2035, Math.max(1800, next))));
   }
 
-  const nextCost = costForClue(cluesRevealed + 1);
-
   return (
     <form
       className="rounded-xl border border-gold/25 bg-card/90 p-4 shadow-lg backdrop-blur"
@@ -66,7 +64,7 @@ export function InputBar({
     >
       <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_8.5rem_auto]">
         <div className="relative">
-          <Label htmlFor="event-guess">Event</Label>
+          <Label htmlFor="event-guess">Subject</Label>
           <div className="relative mt-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gold/60" />
             <Input
@@ -180,11 +178,11 @@ export function InputBar({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-paper/50">
-          Event + year. Fuzzy spelling is allowed.
+          Subject + year · clue {cluesRevealed} of {MAX_CLUES}. Autocomplete helps; scoring is exact.
         </p>
         {canRevealMore ? (
           <Button variant="outline" onClick={onReveal} disabled={disabled}>
-            Reveal next clue · −{nextCost}
+            Reveal next clue · −{PENALTY_PER_CLUE.toLocaleString("en-US")}
           </Button>
         ) : !disabled ? (
           <Button variant="outline" onClick={onGiveUp}>

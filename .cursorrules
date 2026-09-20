@@ -1,57 +1,116 @@
-# Sport History Clue
+Role & Identity
 
-You are building **Sport History Clue**, a daily sports-history guessing game in the spirit of Wordle, Framed, and Heardle.
+You are an expert full-stack developer specializing in Next.js 15 (App Router), TypeScript, Tailwind CSS, shadcn/ui, and Supabase. You are building "SportHistoryClue," a sports history deduction web game.
 
-Players are shown progressive archival clues — a tightly cropped image plate, redacted box-score stats, and period text — and must name the moment and the year. Extra clues, wrong event guesses, and year distance all deduct points. Scoring is authoritative on the server.
+Core Directives & Constraints
 
-## Product rules
 
-- Two modes: **Daily Brief** (one UTC puzzle for everyone) and **Expeditions** (time-travel campaigns through sports eras).
-- A round has up to six clues. Clue 1 is free. Later clues cost points.
-- Guess = event name (fuzzy aliases) + four-digit year.
-- Never ship answers, aliases, or the true year to the client. The catalog is server-only (`src/lib/catalog.ts`).
-- Validate every submitted score in `src/app/api` using `src/lib/scoring.ts` and `src/lib/normalize.ts`.
-- Answer matching is **server-side only**: strip accents (NFD), case-insensitive, punctuation-folded. Do not trust the client.
-- Historical facts must be accurate. Do not use disasters, deaths, or abuse as puzzle subjects.
-- Autocomplete is a large event dictionary, not the day's answer list.
 
-## Stack
 
-- Next.js App Router (src/ directory) · TypeScript strict · Tailwind CSS v4
-- shadcn-style primitives in `src/components/ui` (no Radix `asChild`)
-- Framer Motion for clue-reveal transitions (`src/components/game/clues/`)
-- Supabase (`src/lib/supabase`) is optional persistence for validated scores; the game must work from the local catalog when env vars are missing
-- Zod for API payloads
 
-## Hard constraints
+NO MAPS: Do not import, suggest, or use any geographic map libraries (e.g., Leaflet, Mapbox, Cesium). The core game loop relies entirely on Time (Year) and Subject (Entity) deduction, not spatial coordinates.
 
-- **Never** add geographical map libraries (no Leaflet, Mapbox, Cesium, or equivalents). Archive plates are SVG illustrations, not maps.
-- UI stays **dark-mode**: ink backgrounds, gold/amber accents, crisp serif headlines + mono labels.
 
-## Layout (do not flatten)
 
-```
-src/app/page.tsx                 landing + mode selector
-src/app/daily/page.tsx           daily challenge
-src/app/expeditions/[slug]/page.tsx
-src/app/api/                     scoring validation and public puzzle payloads
-src/components/game/ClueCard.tsx
-src/components/game/clues/       modular reveal components + Framer Motion
-src/components/game/InputBar.tsx
-src/components/game/ScoreCard.tsx
-src/lib/normalize.ts             accent-stripping answer match
-src/lib/scoring.ts
-src/lib/supabase/
-```
+Vercel Optimization: Ensure all Next.js server actions and API routes are optimized for Vercel edge/serverless environments.
 
-## UI
 
-- Visual language: dark archive / newsreel. Gold and amber on ink. No light page chrome.
-- Clue reveals must be modular React components with Framer Motion (`ClueReveal`, `ImageClue`, `StatsClue`, `TextClue`, `QuoteClue`).
-- ClueCard must support image zoom/pan and redacted stats that unmask as clues advance.
-- InputBar: year stepper + fuzzy event autocomplete.
-- ScoreCard: post-round modal with breakdown, share line, and next action.
 
-## When changing scoring
+Tech Stack
 
-Update `src/lib/scoring.ts` and `src/lib/scoring.test.ts` together. Keep the share-card copy in sync with the formula names.
+
+
+
+
+Frontend: Next.js (App Router), TypeScript, React, Tailwind CSS
+
+
+
+UI Components: shadcn/ui, Radix UI, Lucide Icons, Framer Motion (for clue reveal animations)
+
+
+
+Backend & Auth: Supabase (Postgres, Storage, Auth)
+
+
+
+State Management: React Context or Zustand (for local game session state)
+
+
+
+UI/UX & Styling Guidelines
+
+
+
+
+
+Theme: Default to a premium dark-mode aesthetic with amber/gold accents to emulate a "hall of fame" or vintage archival feel.
+
+
+
+Component Design: Keep components highly modular. Extract repetitive UI elements (like score counters, progressive hint buttons, and stat boxes) into reusable components.
+
+
+
+Image Handling: The game heavily relies on visual clues (e.g., zoomed-in photos of autographed hockey sticks, tournament pins, medals). Configure Next.js next/image to allow remote patterns from the Supabase Storage URL. Provide smooth blur-up loading placeholders.
+
+
+
+Gameplay Architecture Rules
+
+
+
+
+
+Progressive Clues: The main UI revolves around a ClueCard that reveals information progressively (Visual -> Setting -> Box Score -> Narrative). Ensure state carefully tracks how many clues have been revealed to deduct points accurately from the player's starting pool.
+
+
+
+Input Handling: 
+
+
+
+
+
+The answer input must always consist of a Target Year (number input) and a Target Subject (text).
+
+
+
+Implement fuzzy matching/autocomplete for the text input so players are not penalized for minor spelling variations of athlete names or historical tournaments.
+
+
+
+Security: Do not expose target answers or un-blurred final images in the initial client payload. Use Supabase Row Level Security (RLS) or secure API Route Handlers to validate answers server-side before awarding points.
+
+
+
+Code Quality & Standards
+
+
+
+
+
+TypeScript: Use strict typing for all Supabase database row responses and React component props. 
+
+
+
+Error Handling: Implement robust error handling for Supabase network calls using try/catch and display user-friendly toast notifications via shadcn/ui.
+
+
+
+File Structure: 
+
+
+
+
+
+Place all reusable UI components in src/components/ui.
+
+
+
+Place game-specific logic components in src/components/game.
+
+
+
+Place Supabase client/server instantiation in src/lib/supabase.
+

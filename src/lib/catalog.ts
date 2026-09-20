@@ -1,7 +1,7 @@
 import "server-only";
 
 import { hashString } from "@/lib/utils";
-import type { Expedition, EventOption, Puzzle } from "@/lib/types";
+import type { AnswerSheet, Expedition, EventOption, Puzzle } from "@/lib/types";
 
 export const expeditions: Expedition[] = [
   {
@@ -1244,6 +1244,40 @@ export const eventDictionary: EventOption[] = [
 
 export function getPuzzle(id: string): Puzzle | undefined {
   return puzzleById.get(id);
+}
+
+function uniqueAliases(values: Array<string | undefined>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (!trimmed) continue;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(trimmed);
+  }
+  return out;
+}
+
+/**
+ * Canonical year + subject + aliases for server-side scoring.
+ * Autocomplete labels are included so a dictionary pick always matches.
+ */
+export function getAnswerSheet(id: string): AnswerSheet | undefined {
+  const puzzle = getPuzzle(id);
+  if (!puzzle) return undefined;
+  const target_subject = SEARCH_LABELS[puzzle.id] ?? puzzle.title;
+  const accepted_aliases = uniqueAliases([
+    puzzle.title,
+    SEARCH_LABELS[puzzle.id],
+    ...puzzle.answers,
+  ]).filter((alias) => alias.toLowerCase() !== target_subject.toLowerCase());
+  return {
+    target_year: puzzle.year,
+    target_subject,
+    accepted_aliases,
+  };
 }
 
 export function getExpedition(slug: string): Expedition | undefined {

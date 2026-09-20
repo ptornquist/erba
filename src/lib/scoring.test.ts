@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  PERFECT_BONUS,
+  MIN_SCORE,
   STARTING_SCORE,
-  YEAR_PENALTY_CAP,
   liveScorePreview,
   scoreAttempt,
   totalClueCost,
-  yearPenalty,
 } from "./scoring";
 
 describe("totalClueCost", () => {
@@ -14,70 +12,72 @@ describe("totalClueCost", () => {
     expect(totalClueCost(1)).toBe(0);
   });
 
-  it("charges rising costs for later clues", () => {
-    expect(totalClueCost(2)).toBe(80);
-    expect(totalClueCost(3)).toBe(210);
-    expect(totalClueCost(6)).toBe(900);
-  });
-});
-
-describe("yearPenalty", () => {
-  it("is zero on an exact year", () => {
-    expect(yearPenalty(1980, 1980)).toBe(0);
-  });
-
-  it("charges 6 points per year of distance", () => {
-    expect(yearPenalty(1982, 1980)).toBe(12);
-  });
-
-  it("caps a wild year guess", () => {
-    expect(yearPenalty(1900, 2022)).toBe(YEAR_PENALTY_CAP);
+  it("charges 2 000 for each extra clue", () => {
+    expect(totalClueCost(2)).toBe(2_000);
+    expect(totalClueCost(3)).toBe(4_000);
+    expect(totalClueCost(6)).toBe(10_000);
   });
 });
 
 describe("scoreAttempt", () => {
-  it("awards a first-clue exact brief the perfect bonus", () => {
+  it("awards 10 000 for a first-clue exact brief", () => {
     const result = scoreAttempt({
       cluesRevealed: 1,
-      wrongEventGuesses: 0,
+      extraClues: 0,
       guessedYear: 1999,
       actualYear: 1999,
       eventCorrect: true,
     });
     expect(result.perfect).toBe(true);
-    expect(result.total).toBe(STARTING_SCORE + PERFECT_BONUS);
+    expect(result.solved).toBe(true);
+    expect(result.total).toBe(STARTING_SCORE);
   });
 
-  it("deducts clues, misses, and year distance", () => {
+  it("deducts only extra clues, not year distance or misses", () => {
     const result = scoreAttempt({
       cluesRevealed: 3,
-      wrongEventGuesses: 2,
+      extraClues: 2,
       guessedYear: 2008,
       actualYear: 2005,
       eventCorrect: true,
+      yearCorrect: true,
+      wrongEventGuesses: 4,
     });
-    expect(result.clueCost).toBe(210);
-    expect(result.wrongGuessCost).toBe(120);
-    expect(result.yearCost).toBe(18);
-    expect(result.total).toBe(652);
+    expect(result.clueCost).toBe(4_000);
+    expect(result.wrongGuessCost).toBe(0);
+    expect(result.yearCost).toBe(0);
+    expect(result.total).toBe(6_000);
   });
 
-  it("scores an unsolved round at zero", () => {
+  it("floors a late correct file at 1 000", () => {
     const result = scoreAttempt({
       cluesRevealed: 6,
-      wrongEventGuesses: 4,
-      guessedYear: 1970,
+      extraClues: 5,
+      guessedYear: 1980,
+      actualYear: 1980,
+      eventCorrect: true,
+    });
+    expect(result.total).toBe(MIN_SCORE);
+  });
+
+  it("scores an unsolved round at zero, even with the right year", () => {
+    const result = scoreAttempt({
+      cluesRevealed: 2,
+      extraClues: 1,
+      guessedYear: 1980,
       actualYear: 1980,
       eventCorrect: false,
     });
     expect(result.solved).toBe(false);
+    expect(result.isYearCorrect).toBe(true);
     expect(result.total).toBe(0);
-    expect(result.yearCost).toBe(YEAR_PENALTY_CAP);
   });
 });
 
 describe("liveScorePreview", () => {
-  it("shows remaining points before the year is scored", () => {
-    expect(liveScorePreview(2, 1)).toBe(860);
+  it("shows remaining points before the guess is scored", () => {
+    expect(liveScorePreview(1)).toBe(10_000);
+    expect(liveScorePreview(2)).toBe(8_000);
+    expect(liveScorePreview(6)).toBe(1_000);
   });
 });

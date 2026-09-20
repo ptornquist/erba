@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { answersMatch, normalizeAnswer, stripAccents } from "./normalize";
+import { normalizeText } from "./grade";
 
 describe("stripAccents", () => {
   it("removes combining marks after NFD", () => {
@@ -17,6 +18,12 @@ describe("normalizeAnswer", () => {
   it("folds accents before comparison", () => {
     expect(normalizeAnswer("Nadia Comăneci")).toBe("nadia comaneci");
     expect(normalizeAnswer("PELÉ")).toBe("pele");
+  });
+});
+
+describe("normalizeText (scoring)", () => {
+  it("keeps words the scoring route compares exactly", () => {
+    expect(normalizeText("Nadia Comăneci perfect 10")).toBe("nadia comaneci perfect 10");
   });
 });
 

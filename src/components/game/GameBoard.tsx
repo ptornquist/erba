@@ -6,10 +6,12 @@ import { ClueCard } from "@/components/game/ClueCard";
 import { InputBar } from "@/components/game/InputBar";
 import { ScoreCard } from "@/components/game/ScoreCard";
 import { Badge } from "@/components/ui/badge";
+import { extraCluesFromVisible } from "@/lib/grade";
 import { markExpeditionSolved, recordDailyResult } from "@/lib/progress";
 import {
   MAX_CLUES,
   liveScorePreview,
+  scoreAttempt,
   type ScoreBreakdown,
 } from "@/lib/scoring";
 import type { EventOption, PublicPuzzle, Sport } from "@/lib/types";
@@ -33,11 +35,16 @@ interface Answer {
 }
 
 interface ScoreResponse {
-  correct: boolean;
-  yearDelta: number | null;
-  breakdown: ScoreBreakdown | null;
-  nearest?: string | null;
-  answer?: Answer;
+  success?: boolean;
+  isFullyCorrect?: boolean;
+  isYearCorrect?: boolean;
+  isSubjectCorrect?: boolean;
+  pointsAwarded?: number;
+  revealedAnswer?: string | null;
+  revealedYear?: number | null;
+  correct?: boolean;
+  breakdown?: ScoreBreakdown | null;
+  answer?: Answer | null;
   error?: string;
 }
 
@@ -53,7 +60,6 @@ export function GameBoard({
 }: GameBoardProps) {
   const [cluesRevealed, setCluesRevealed] = React.useState(1);
   const [viewingClue, setViewingClue] = React.useState(1);
-  const [wrongEventGuesses, setWrongEventGuesses] = React.useState(0);
   const [pending, setPending] = React.useState(false);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [result, setResult] = React.useState<ScoreBreakdown | null>(null);
@@ -61,7 +67,7 @@ export function GameBoard({
   const [scoreOpen, setScoreOpen] = React.useState(false);
 
   const finished = result !== null;
-  const live = liveScorePreview(cluesRevealed, wrongEventGuesses);
+  const live = liveScorePreview(cluesRevealed);
   const clue = puzzle.clues[viewingClue - 1];
 
   async function postScore(body: Record<string, unknown>): Promise<ScoreResponse> {
@@ -88,41 +94,59 @@ export function GameBoard({
     }
   }
 
-  async function onGuess(event: string, year: number) {
+  async function onGuess(subject: string, year: number) {
     if (finished || pending) return;
     setPending(true);
     setNotice(null);
     try {
+      const extraClues = extraCluesFromVisible(cluesRevealed);
       const data = await postScore({
         puzzleId: puzzle.id,
         mode,
         dateKey,
         expeditionSlug,
-        guessEvent: event,
-        guessYear: year,
-        cluesRevealed,
-        wrongEventGuesses,
+        guessedSubject: subject,
+        guessedYear: year,
+        cluesRevealed: extraClues,
       });
       if (data.error) {
         setNotice(data.error);
         return;
       }
-      if (!data.correct) {
-        const nextWrong = wrongEventGuesses + 1;
-        setWrongEventGuesses(nextWrong);
-        setNotice(
-          data.nearest
-            ? `Not the plate. “${data.nearest}” is in the dictionary — try a closer reading.`
-            : "Not the plate. Reveal another clue or try a different name.",
-        );
+      if (!data.isFullyCorrect) {
+        if (data.isSubjectCorrect && !data.isYearCorrect) {
+          setNotice("Right subject, wrong year. The archive still wants the date.");
+        } else if (data.isYearCorrect && !data.isSubjectCorrect) {
+          setNotice("Right year, wrong subject. Try another name from the dictionary.");
+        } else {
+          setNotice("Not the plate. Reveal another clue or try a different name.");
+        }
         return;
       }
-      if (data.breakdown && data.answer) {
-        setResult(data.breakdown);
-        setAnswer(data.answer);
-        setScoreOpen(true);
-        persist(data.breakdown);
-      }
+      const breakdown =
+        data.breakdown ??
+        scoreAttempt({
+          cluesRevealed,
+          extraClues,
+          guessedYear: year,
+          actualYear: data.revealedYear ?? year,
+          eventCorrect: true,
+          yearCorrect: true,
+        });
+      const filed: Answer | undefined = data.answer
+        ? data.answer
+        : data.revealedAnswer && data.revealedYear
+          ? {
+              title: data.revealedAnswer,
+              year: data.revealedYear,
+              summary: "",
+              sport: puzzle.sport,
+            }
+          : undefined;
+      setResult(breakdown);
+      setAnswer(filed);
+      setScoreOpen(true);
+      persist(breakdown);
     } catch {
       setNotice("The archive desk is busy. Try the guess again.");
     } finally {
@@ -130,30 +154,20 @@ export function GameBoard({
     }
   }
 
-  async function onGiveUp() {
+  function onGiveUp() {
     if (finished || pending) return;
-    setPending(true);
-    try {
-      const data = await postScore({
-        puzzleId: puzzle.id,
-        mode,
-        dateKey,
-        expeditionSlug,
-        guessEvent: "closed file",
-        guessYear: 1900,
-        cluesRevealed,
-        wrongEventGuesses,
-        giveUp: true,
-      });
-      if (data.breakdown && data.answer) {
-        setResult(data.breakdown);
-        setAnswer(data.answer);
-        setScoreOpen(true);
-        persist(data.breakdown);
-      }
-    } finally {
-      setPending(false);
-    }
+    const breakdown = scoreAttempt({
+      cluesRevealed,
+      extraClues: extraCluesFromVisible(cluesRevealed),
+      guessedYear: 0,
+      actualYear: 0,
+      eventCorrect: false,
+      yearCorrect: false,
+    });
+    setResult(breakdown);
+    setAnswer(undefined);
+    setScoreOpen(true);
+    persist(breakdown);
   }
 
   function onReveal() {

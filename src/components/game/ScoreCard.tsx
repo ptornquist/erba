@@ -58,7 +58,9 @@ export function ScoreCard({
         description={
           breakdown.solved
             ? "The archive accepts your identification."
-            : "The file is closed. The plate is below — take another expedition, or come back tomorrow."
+            : answer
+              ? "The file is closed. The plate is below — take another expedition, or come back tomorrow."
+              : "The file is closed. The answer stays in the archive unless both year and subject are logged."
         }
         onClose={() => onOpenChange(false)}
       >
@@ -79,18 +81,15 @@ export function ScoreCard({
 
           <dl className="mt-5 grid grid-cols-2 gap-2 font-mono text-sm">
             <Row label="Opening balance" value={`+${breakdown.starting}`} />
-            <Row label="Clues" value={`−${breakdown.clueCost}`} />
-            <Row label="Misses" value={`−${breakdown.wrongGuessCost}`} />
-            <Row label="Year" value={`−${breakdown.yearCost}`} />
-            {breakdown.bonus > 0 && <Row label="Perfect bonus" value={`+${breakdown.bonus}`} />}
+            <Row label="Extra clues" value={`−${breakdown.clueCost}`} />
           </dl>
 
           <p className="mt-4 font-serif text-4xl tabular-nums text-gold">{breakdown.total} pts</p>
           {breakdown.solved && (
             <p className="text-sm text-paper/60">
-              {breakdown.yearDelta === 0
-                ? "Exact year."
-                : `${breakdown.yearDelta} year${breakdown.yearDelta === 1 ? "" : "s"} off.`}
+              {breakdown.perfect
+                ? "First clue, exact year and subject."
+                : "Year and subject both logged."}
             </p>
           )}
 

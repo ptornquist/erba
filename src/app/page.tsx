@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { expeditions, getDailyPuzzle } from "@/lib/catalog";
-import { MAX_CLUES, STARTING_SCORE, WRONG_EVENT_PENALTY } from "@/lib/scoring";
+import { MAX_CLUES, MIN_SCORE, PENALTY_PER_CLUE, STARTING_SCORE } from "@/lib/scoring";
 import { cn, formatUtcDate, utcDateKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export default function HomePage() {
           </h1>
           <p className="mt-5 max-w-lg text-base leading-relaxed text-paper/70">
             A cropped plate. A redacted box score. A line of period copy. Name the
-            moment and the year before the file spends itself.
+            subject and the year before extra clues spend the file.
           </p>
         </div>
         <Card className="border-gold/40 bg-card text-paper">
@@ -64,16 +64,16 @@ export default function HomePage() {
         <h2 className="font-serif text-2xl text-paper">How a brief is scored</h2>
         <ul className="mt-4 grid gap-3 sm:grid-cols-3">
           <Rule
-            title={`${STARTING_SCORE} opening`}
-            body="Every file starts at a thousand. Clue one is free."
+            title={`${STARTING_SCORE.toLocaleString("en-US")} opening`}
+            body="Every file starts at ten thousand. Clue one is free."
           />
           <Rule
             title={`${MAX_CLUES} plates`}
-            body="Each extra clue costs more than the last. You can always go back."
+            body={`Each extra clue costs ${PENALTY_PER_CLUE.toLocaleString("en-US")}. You can always go back.`}
           />
           <Rule
-            title={`${WRONG_EVENT_PENALTY} a miss`}
-            body="Wrong names hurt. Wrong years cost six points per year, capped."
+            title={`${MIN_SCORE.toLocaleString("en-US")} floor`}
+            body="Year and subject must both match. A correct file never drops below a thousand."
           />
         </ul>
       </section>

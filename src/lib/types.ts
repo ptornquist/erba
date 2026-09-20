@@ -82,6 +82,13 @@ export interface Puzzle {
   difficulty: 1 | 2 | 3;
 }
 
+/** Hidden answer sheet used by the validation route. Never sent to the client. */
+export interface AnswerSheet {
+  target_year: number;
+  target_subject: string;
+  accepted_aliases: string[];
+}
+
 export interface PublicPuzzle {
   id: string;
   sport: Sport;
