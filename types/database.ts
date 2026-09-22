@@ -11,11 +11,18 @@ export type UUID = string;
 /** ISO-8601 string as returned by PostgREST for TIMESTAMPTZ columns. */
 export type Timestamptz = string;
 
+export type VerificationStatus =
+  | "self_reported"
+  | "evidence_supplied"
+  | "verified";
+
 export type Profile = {
   id: UUID;
   email: string;
   referral_code: string;
   referred_by: string | null;
+  /** Granted only by a privileged SQL or service-role write. */
+  is_admin: boolean;
   created_at: Timestamptz;
 };
 
@@ -36,19 +43,23 @@ export type PainSubmission = {
   /** NUMERIC columns are serialised as strings by PostgREST unless cast; keep both. */
   estimated_cost_eur: number | string;
   description: string | null;
+  verification_status: VerificationStatus;
   created_at: Timestamptz;
 };
 
-export type ProfileInsert = Omit<Profile, "created_at"> &
-  Partial<Pick<Profile, "created_at">>;
+export type ProfileInsert = Omit<Profile, "created_at" | "is_admin"> &
+  Partial<Pick<Profile, "created_at" | "is_admin">>;
 export type ProfileUpdate = Partial<Profile>;
 
 export type CompanyInsert = Omit<Company, "id" | "created_at"> &
   Partial<Pick<Company, "id" | "created_at">>;
 export type CompanyUpdate = Partial<Company>;
 
-export type PainSubmissionInsert = Omit<PainSubmission, "id" | "created_at"> &
-  Partial<Pick<PainSubmission, "id" | "created_at">>;
+export type PainSubmissionInsert = Omit<
+  PainSubmission,
+  "id" | "created_at" | "verification_status"
+> &
+  Partial<Pick<PainSubmission, "id" | "created_at" | "verification_status">>;
 export type PainSubmissionUpdate = Partial<PainSubmission>;
 
 export const IMPACT_LEVELS = ["High", "Med", "Low"] as const;
@@ -87,6 +98,9 @@ export type DocumentVaultItem = {
   company_id: UUID;
   file_name: string;
   file_url: string;
+  /** Private storage object used by the admin evidence route. */
+  storage_path?: string | null;
+  pain_submission_id?: UUID | null;
   uploaded_at: Timestamptz;
 };
 
