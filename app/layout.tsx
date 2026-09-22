@@ -22,11 +22,11 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Europe's real economy has had enough. Join the movement measuring the real cost of cumulative EU regulation.",
+    "Nobody knows what cumulative European regulation actually costs mid-market businesses. We are measuring it.",
   openGraph: {
     title: `${SITE_NAME} – ${SITE_FULL_NAME}`,
     description:
-      "Cumulative EU regulations are killing competitiveness. Join the movement measuring the real cost.",
+      "Nobody knows what cumulative European regulation actually costs mid-market businesses. We are measuring it.",
     type: "website",
     url: SITE_URL,
   },

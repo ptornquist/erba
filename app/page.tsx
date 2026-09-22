@@ -10,6 +10,10 @@ import {
   Tractor,
   Users,
 } from "lucide-react";
+import {
+  MethodologyStatement,
+  VerificationTiers,
+} from "@/components/ledger-standards";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MOMENTUM_STATS } from "@/lib/constants";
@@ -62,15 +66,14 @@ export default function LandingPage() {
         <div className="relative mx-auto flex max-w-7xl flex-col items-center px-4 pb-24 pt-20 text-center sm:px-6 lg:px-8 lg:pb-32 lg:pt-28">
           <Badge variant="warning" className="mb-6 px-3 py-1 text-xs uppercase tracking-widest">
             <FileWarning className="size-3.5" aria-hidden="true" />
-            Movement open for mid-cap CEOs
+            Independent data ledger
           </Badge>
-          <h1 className="max-w-5xl text-balance text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-8xl">
-            Europe&apos;s Real Economy Has{" "}
-            <span className="text-primary">Had Enough.</span>
+          <h1 className="max-w-5xl text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            Nobody knows what cumulative European regulation actually costs
+            mid-market businesses.
           </h1>
           <p className="mt-8 max-w-2xl text-balance text-lg text-muted-foreground sm:text-xl lg:text-2xl">
-            Cumulative EU regulations are killing competitiveness. Join the
-            movement measuring the real cost.
+            <span className="font-semibold text-primary">We are measuring it.</span>
           </p>
           <div className="mt-12 flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row">
             <ButtonLink
@@ -121,6 +124,31 @@ export default function LandingPage() {
               <p className="text-sm font-semibold uppercase tracking-widest opacity-90">
                 Documented Compliance Costs
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-border/60 py-24 lg:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+              Methodology
+            </p>
+            <h2 className="mt-3 text-balance text-4xl font-bold tracking-tight sm:text-5xl">
+              A ledger, not a campaign slogan.
+            </h2>
+            <MethodologyStatement className="mt-5 text-lg text-muted-foreground" />
+          </div>
+          <div className="mt-12">
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+              Data verification
+            </p>
+            <h3 className="mt-3 max-w-3xl text-2xl font-bold tracking-tight sm:text-3xl">
+              Every figure sits in one of three strict tiers.
+            </h3>
+            <div className="mt-8">
+              <VerificationTiers />
             </div>
           </div>
         </div>

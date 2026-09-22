@@ -549,11 +549,19 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 ))}
               </Select>
             </FormField>
+            <div className="rounded-lg border border-border bg-secondary/70 p-4">
+              <p className="text-sm font-semibold text-foreground">
+                What counts as a compliance cost
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Include internal staff time, external legal/consulting fees,
+                and dedicated IT/system costs.
+              </p>
+            </div>
             <FormField
               id="estimatedCostEur"
               label="Estimated annual compliance cost (EUR)"
               error={errors.estimatedCostEur?.message}
-              hint="Include staff time, consultants, audits, software and legal fees."
             >
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
