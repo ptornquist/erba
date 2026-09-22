@@ -28,6 +28,13 @@ export const SOCIAL_LINKS = [
 
 export type SocialNetwork = (typeof SOCIAL_LINKS)[number]["id"];
 
+export const MEMBER_TYPES = ["company", "individual"] as const;
+export type MemberType = (typeof MEMBER_TYPES)[number];
+
+/** Stored for private members so company columns stay populated without a form. */
+export const INDIVIDUAL_INDUSTRY = "Private individual";
+export const INDIVIDUAL_TURNOVER = "Private individual";
+
 export const REFERRALS_TO_UNLOCK = 5;
 
 export const INDUSTRIES = [

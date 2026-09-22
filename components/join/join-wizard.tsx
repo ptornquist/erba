@@ -25,13 +25,17 @@ import { FormField } from "@/components/form-field";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   INDUSTRIES,
+  INDIVIDUAL_INDUSTRY,
+  INDIVIDUAL_TURNOVER,
+  MEMBER_TYPES,
   REGULATIONS,
   REGULATION_LABELS,
   TURNOVER_BANDS,
 } from "@/lib/constants";
 import {
+  hasPainContribution,
   joinSchema,
-  STEP_FIELDS,
+  stepFields,
   type JoinFormValues,
 } from "@/lib/validations/join";
 import { humaniseSupabaseError } from "@/lib/errors";
@@ -40,8 +44,8 @@ import { cn, generateReferralCode } from "@/lib/utils";
 
 const STEPS = [
   { title: "Account", description: "Who you are", icon: UserRound },
-  { title: "Company", description: "What you run", icon: Building2 },
-  { title: "Pain Index", description: "What it costs", icon: Euro },
+  { title: "Membership", description: "Company or individual", icon: Building2 },
+  { title: "Pain Index", description: "Optional", icon: Euro },
 ] as const;
 
 interface JoinWizardProps {
@@ -64,6 +68,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
       name: "",
       email: "",
       password: "",
+      memberType: "company",
       companyName: "",
       industry: undefined,
       turnoverBand: undefined,
@@ -84,10 +89,11 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   } = form;
 
   const isAnonymous = useWatch({ control, name: "isAnonymous" });
+  const memberType = useWatch({ control, name: "memberType" });
   const isLastStep = step === STEPS.length - 1;
 
   async function goNext() {
-    const valid = await trigger(STEP_FIELDS[step], { shouldFocus: true });
+    const valid = await trigger(stepFields(step, memberType), { shouldFocus: true });
     if (valid) {
       setSubmitError(null);
       setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -97,6 +103,13 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   function goBack() {
     setSubmitError(null);
     setStep((s) => Math.max(s - 1, 0));
+  }
+
+  async function skipPainAndJoin() {
+    setValue("regulation", "");
+    setValue("estimatedCostEur", undefined);
+    setValue("description", "");
+    await handleSubmit(onSubmit)();
   }
 
   async function onSubmit(values: JoinFormValues) {
@@ -111,20 +124,34 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
     try {
       const supabase = createClient();
+      const joiningAsIndividual = values.memberType === "individual";
+      const includePain = hasPainContribution(values);
+      const organisationName = joiningAsIndividual
+        ? values.name
+        : values.companyName.trim();
+      const industry = joiningAsIndividual
+        ? INDIVIDUAL_INDUSTRY
+        : (values.industry as string);
+      const turnoverBand = joiningAsIndividual
+        ? INDIVIDUAL_TURNOVER
+        : (values.turnoverBand as string);
 
       // The full onboarding payload travels with the auth user so the
       // `on_auth_user_created` trigger can provision profile/company/pain rows
       // server-side. That is required when email confirmation is enabled,
       // because the browser has no session (and therefore no RLS rights) yet.
+      // Pain fields are omitted when the member skips that step.
       const onboarding = {
         full_name: values.name,
-        company_name: values.companyName,
-        industry: values.industry,
-        turnover_band: values.turnoverBand,
+        member_type: values.memberType,
+        company_name: organisationName,
+        industry,
+        turnover_band: turnoverBand,
         is_anonymous: values.isAnonymous,
-        regulation_name: values.regulation,
-        estimated_cost_eur: values.estimatedCostEur,
-        description: values.description ? values.description : null,
+        regulation_name: includePain ? values.regulation : null,
+        estimated_cost_eur: includePain ? values.estimatedCostEur : null,
+        description:
+          includePain && values.description ? values.description : null,
         referred_by: referredBy,
       };
 
@@ -191,24 +218,26 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
           .from("companies")
           .insert({
             profile_id: user.id,
-            name: values.companyName,
-            industry: values.industry,
-            turnover_band: values.turnoverBand,
+            name: organisationName,
+            industry,
+            turnover_band: turnoverBand,
             is_anonymous: values.isAnonymous,
           })
           .select("id")
           .single();
         if (companyError) throw companyError;
 
-        const { error: painError } = await supabase
-          .from("pain_submissions")
-          .insert({
-            company_id: company.id,
-            regulation_name: values.regulation,
-            estimated_cost_eur: values.estimatedCostEur,
-            description: values.description ? values.description : null,
-          });
-        if (painError) throw painError;
+        if (includePain && company) {
+          const { error: painError } = await supabase
+            .from("pain_submissions")
+            .insert({
+              company_id: company.id,
+              regulation_name: values.regulation as string,
+              estimated_cost_eur: values.estimatedCostEur as number,
+              description: values.description ? values.description : null,
+            });
+          if (painError) throw painError;
+        }
       }
 
       // Hard navigation so the router cannot reuse a prefetched pre-auth redirect.
@@ -232,7 +261,7 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         </span>
         <h2 className="text-2xl font-bold tracking-tight">Confirm your email</h2>
         <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-          Your company and regulatory pain have been recorded. We sent a
+          Your account is ready. We sent a
           confirmation link to{" "}
           <span className="font-medium text-foreground">
             {form.getValues("email")}
@@ -364,71 +393,123 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
         {step === 1 && (
           <fieldset className="space-y-5">
-            <legend className="sr-only">Company details</legend>
-            <FormField
-              id="companyName"
-              label="Company name"
-              error={errors.companyName?.message}
-            >
-              <Input
-                id="companyName"
-                autoComplete="organization"
-                placeholder="Schneider Präzisionstechnik GmbH"
-                aria-invalid={Boolean(errors.companyName)}
-                {...register("companyName")}
-              />
-            </FormField>
-            <div className="grid gap-5 sm:grid-cols-2">
-              <FormField
-                id="industry"
-                label="Industry"
-                error={errors.industry?.message}
-              >
-                <Select
-                  id="industry"
-                  defaultValue=""
-                  placeholder="Select industry"
-                  aria-invalid={Boolean(errors.industry)}
-                  {...register("industry")}
-                >
-                  {INDUSTRIES.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
-              <FormField
-                id="turnoverBand"
-                label="Annual turnover"
-                error={errors.turnoverBand?.message}
-              >
-                <Select
-                  id="turnoverBand"
-                  defaultValue=""
-                  placeholder="Select turnover band"
-                  aria-invalid={Boolean(errors.turnoverBand)}
-                  {...register("turnoverBand")}
-                >
-                  {TURNOVER_BANDS.map((band) => (
-                    <option key={band} value={band}>
-                      {band}
-                    </option>
-                  ))}
-                </Select>
-              </FormField>
+            <legend className="sr-only">Membership details</legend>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">How are you joining?</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {MEMBER_TYPES.map((type) => {
+                  const selected = memberType === type;
+                  return (
+                    <label
+                      key={type}
+                      className={cn(
+                        "flex cursor-pointer items-start gap-3 rounded-lg border bg-background p-4 transition-colors",
+                        selected
+                          ? "border-primary ring-2 ring-primary/20"
+                          : "border-border hover:border-primary/40",
+                      )}
+                    >
+                      <input
+                        type="radio"
+                        value={type}
+                        className="mt-1 size-4 accent-primary"
+                        {...register("memberType")}
+                      />
+                      <span>
+                        <span className="block text-sm font-semibold">
+                          {type === "company"
+                            ? "Register as a Company"
+                            : "Register as an Individual"}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {type === "company"
+                            ? "Add your company name, industry and turnover."
+                            : "Join without a company. Those fields stay hidden."}
+                        </span>
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+              {errors.memberType?.message && (
+                <p role="alert" className="text-sm text-destructive">
+                  {errors.memberType.message}
+                </p>
+              )}
             </div>
+
+            {memberType === "company" && (
+              <>
+                <FormField
+                  id="companyName"
+                  label="Company name"
+                  error={errors.companyName?.message}
+                >
+                  <Input
+                    id="companyName"
+                    autoComplete="organization"
+                    placeholder="Schneider Präzisionstechnik GmbH"
+                    aria-invalid={Boolean(errors.companyName)}
+                    {...register("companyName")}
+                  />
+                </FormField>
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <FormField
+                    id="industry"
+                    label="Industry"
+                    error={errors.industry?.message}
+                  >
+                    <Select
+                      id="industry"
+                      defaultValue=""
+                      placeholder="Select industry"
+                      aria-invalid={Boolean(errors.industry)}
+                      {...register("industry")}
+                    >
+                      {INDUSTRIES.map((industry) => (
+                        <option key={industry} value={industry}>
+                          {industry}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                  <FormField
+                    id="turnoverBand"
+                    label="Annual turnover"
+                    error={errors.turnoverBand?.message}
+                  >
+                    <Select
+                      id="turnoverBand"
+                      defaultValue=""
+                      placeholder="Select turnover band"
+                      aria-invalid={Boolean(errors.turnoverBand)}
+                      {...register("turnoverBand")}
+                    >
+                      {TURNOVER_BANDS.map((band) => (
+                        <option key={band} value={band}>
+                          {band}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormField>
+                </div>
+              </>
+            )}
+
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-background p-4">
               <div className="space-y-1">
                 <label
                   htmlFor="isAnonymous"
                   className="text-sm font-medium leading-none"
                 >
-                  Keep my company anonymous
+                  {memberType === "individual"
+                    ? "Keep my name anonymous"
+                    : "Keep my company anonymous"}
                 </label>
                 <p className="text-xs text-muted-foreground">
-                  Your cost data still counts in the Pain Index, but your
-                  company name is never displayed publicly.
+                  {memberType === "individual"
+                    ? "Your contribution can still count, but your name is never displayed publicly."
+                    : "Your cost data still counts in the Pain Index, but your company name is never displayed publicly."}
                 </p>
               </div>
               <Switch
@@ -445,6 +526,10 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         {step === 2 && (
           <fieldset className="space-y-5">
             <legend className="sr-only">Regulatory pain</legend>
+            <p className="text-sm text-muted-foreground">
+              This step is optional. Add a figure now, or skip it and finish
+              creating your account.
+            </p>
             <FormField
               id="regulation"
               label="Worst regulatory burden"
@@ -483,7 +568,15 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                   placeholder="250000"
                   className="pl-8 font-mono"
                   aria-invalid={Boolean(errors.estimatedCostEur)}
-                  {...register("estimatedCostEur", { valueAsNumber: true })}
+                  {...register("estimatedCostEur", {
+                    setValueAs: (value) => {
+                      if (value === "" || value === null || value === undefined) {
+                        return undefined;
+                      }
+                      const parsed = typeof value === "number" ? value : Number(value);
+                      return Number.isFinite(parsed) ? parsed : undefined;
+                    },
+                  })}
                 />
               </div>
             </FormField>
@@ -537,24 +630,36 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
               </Button>
             )}
             {isLastStep ? (
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSubmitting}
-                className="flex-1 sm:flex-none"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="animate-spin" />
-                    Creating account…
-                  </>
-                ) : (
-                  <>
-                    Join the Alliance
-                    <ArrowRight />
-                  </>
-                )}
-              </Button>
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  disabled={isSubmitting}
+                  onClick={skipPainAndJoin}
+                  className="flex-1 sm:flex-none"
+                >
+                  Skip this step
+                </Button>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="flex-1 sm:flex-none"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin" />
+                      Creating account…
+                    </>
+                  ) : (
+                    <>
+                      Join the Alliance
+                      <ArrowRight />
+                    </>
+                  )}
+                </Button>
+              </>
             ) : (
               <Button
                 type="button"

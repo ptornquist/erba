@@ -28,8 +28,10 @@ declare
   meta        jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
   code        text;
   attempts    integer := 0;
-  new_company uuid;
-  cost        numeric;
+  new_company    uuid;
+  cost           numeric;
+  v_member_type  text;
+  v_company_name text;
 begin
   -- Profile (with a unique 6-character referral code).
   loop
@@ -52,16 +54,33 @@ begin
     end;
   end loop;
 
-  -- Company + first pain submission are optional (the wizard always sends
-  -- them, but other sign-up paths may not).
-  if nullif(trim(meta ->> 'company_name'), '') is not null then
+  -- Company details and the Pain Index are both optional. Private individuals
+  -- are stored as a company row named after the person so dashboard access
+  -- keeps working when they do not enter a company name, industry, or turnover.
+  v_member_type := coalesce(nullif(trim(meta ->> 'member_type'), ''), 'company');
+  v_company_name := coalesce(
+    nullif(trim(meta ->> 'company_name'), ''),
+    case
+      when v_member_type = 'individual'
+        then coalesce(nullif(trim(meta ->> 'full_name'), ''), 'Private member')
+      else null
+    end
+  );
+
+  if v_company_name is not null then
     begin
       insert into public.companies (profile_id, name, industry, turnover_band, is_anonymous)
       values (
         new.id,
-        trim(meta ->> 'company_name'),
-        coalesce(nullif(trim(meta ->> 'industry'), ''), 'Other'),
-        coalesce(nullif(trim(meta ->> 'turnover_band'), ''), 'Undisclosed'),
+        v_company_name,
+        coalesce(
+          nullif(trim(meta ->> 'industry'), ''),
+          case when v_member_type = 'individual' then 'Private individual' else 'Other' end
+        ),
+        coalesce(
+          nullif(trim(meta ->> 'turnover_band'), ''),
+          case when v_member_type = 'individual' then 'Private individual' else 'Undisclosed' end
+        ),
         coalesce((meta ->> 'is_anonymous')::boolean, false)
       )
       returning id into new_company;
@@ -79,8 +98,8 @@ begin
         end if;
       end if;
     exception when others then
-      -- Never block account creation because of an onboarding payload issue;
-      -- the dashboard prompts the member to complete their company profile.
+      -- Never block account creation because company or pain data was omitted
+      -- or rejected by a constraint.
       raise warning 'handle_new_user: could not provision company for %: %', new.id, sqlerrm;
     end;
   end if;
