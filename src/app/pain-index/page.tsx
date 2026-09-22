@@ -1,0 +1,24 @@
+import { PainIndexClient } from "@/components/pain-index-client";
+import { SiteFrame } from "@/components/site-frame";
+
+export default function PainIndexPage() {
+  return (
+    <SiteFrame>
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-16">
+        <p className="text-[11px] tracking-[0.28em] text-[#c4b38a]">
+          PUBLIC STATISTICAL SERIES
+        </p>
+        <h1 className="font-heading mt-3 text-4xl text-[#f4efe4]">
+          Pain Index
+        </h1>
+        <p className="mt-3 mb-10 max-w-2xl text-sm leading-7 text-white/55">
+          Journalists and researchers can inspect documented burden by
+          verification quality. Figures follow Standard Cost Model
+          disaggregation of internal administrative overhead and external
+          compliance spend.
+        </p>
+        <PainIndexClient />
+      </main>
+    </SiteFrame>
+  );
+}
