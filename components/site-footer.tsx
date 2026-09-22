@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+import { SocialLinks } from "@/components/social-links";
 import { SITE_DOMAIN, SITE_FULL_NAME, SITE_NAME } from "@/lib/constants";
 
 export function SiteFooter() {
@@ -18,6 +19,10 @@ export function SiteFooter() {
             documenting the cumulative cost of EU regulation, one data point at
             a time.
           </p>
+          <div className="space-y-2 pt-1">
+            <p className="text-sm font-semibold text-foreground">Follow ERBA</p>
+            <SocialLinks />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
@@ -27,6 +32,11 @@ export function SiteFooter() {
               <li>
                 <Link href="/join" className="hover:text-foreground">
                   Join Free
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="hover:text-foreground">
+                  Log in
                 </Link>
               </li>
               <li>

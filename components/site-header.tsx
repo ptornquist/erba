@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, ShieldAlert, X } from "lucide-react";
+import { SocialLinks } from "@/components/social-links";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { hardNavigate } from "@/lib/navigation";
@@ -60,35 +61,42 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-                pathname === link.href && "text-foreground",
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-          {isAuthed ? (
-            <>
-              <ButtonLink href="/dashboard" variant="outline" size="sm">
-                Dashboard
-              </ButtonLink>
-              <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                <LogOut />
-                Sign out
-              </Button>
-            </>
-          ) : (
-            <ButtonLink href="/join" size="sm">
-              Join Free
-            </ButtonLink>
-          )}
-        </nav>
+        <div className="flex items-center gap-3">
+          <SocialLinks className="hidden md:flex" />
+          <nav className="hidden items-center gap-6 md:flex" aria-label="Main">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
+                  pathname === link.href && "text-foreground",
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            {isAuthed ? (
+              <>
+                <ButtonLink href="/dashboard" variant="outline" size="sm">
+                  Dashboard
+                </ButtonLink>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut />
+                  Sign out
+                </Button>
+              </>
+            ) : (
+              <>
+                <ButtonLink href="/login" variant="outline" size="sm">
+                  Log in
+                </ButtonLink>
+                <ButtonLink href="/join" size="sm">
+                  Join Free
+                </ButtonLink>
+              </>
+            )}
+          </nav>
 
         <button
           type="button"
@@ -100,6 +108,7 @@ export function SiteHeader() {
         >
           {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
         </button>
+        </div>
       </div>
 
       {menuOpen && (
@@ -130,10 +139,16 @@ export function SiteHeader() {
                 </Button>
               </>
             ) : (
-              <ButtonLink href="/join" onClick={closeMenu}>
-                Join Free
-              </ButtonLink>
+              <>
+                <ButtonLink href="/login" variant="outline" onClick={closeMenu}>
+                  Log in
+                </ButtonLink>
+                <ButtonLink href="/join" onClick={closeMenu}>
+                  Join Free
+                </ButtonLink>
+              </>
             )}
+            <SocialLinks className="pt-1" />
           </div>
         </nav>
       )}

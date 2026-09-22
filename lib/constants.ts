@@ -3,6 +3,31 @@ export const SITE_FULL_NAME = "European Regulatory Burden Alliance";
 export const SITE_DOMAIN = "euregburden.org";
 export const SITE_URL = `https://${SITE_DOMAIN}`;
 
+export const SOCIAL_LINKS = [
+  {
+    id: "linkedin",
+    label: "LinkedIn",
+    href: "https://www.linkedin.com/company/eureg-burden-alliance",
+  },
+  {
+    id: "facebook",
+    label: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61584326527776",
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    href: "https://www.instagram.com/erba.416/",
+  },
+  {
+    id: "x",
+    label: "X",
+    href: "https://x.com/EuErba20698",
+  },
+] as const;
+
+export type SocialNetwork = (typeof SOCIAL_LINKS)[number]["id"];
+
 export const REFERRALS_TO_UNLOCK = 5;
 
 export const INDUSTRIES = [

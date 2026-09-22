@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -15,7 +16,7 @@ import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { signInSchema, type SignInFormValues } from "@/lib/validations/join";
 
 interface SignInFormProps {
-  onSwitchToJoin: () => void;
+  onSwitchToJoin?: () => void;
 }
 
 export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
@@ -129,13 +130,22 @@ export function SignInForm({ onSwitchToJoin }: SignInFormProps) {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         New to ERBA?{" "}
-        <button
-          type="button"
-          onClick={onSwitchToJoin}
-          className="font-medium text-foreground underline-offset-4 hover:underline"
-        >
-          Join free
-        </button>
+        {onSwitchToJoin ? (
+          <button
+            type="button"
+            onClick={onSwitchToJoin}
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Join free
+          </button>
+        ) : (
+          <Link
+            href="/join"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Join free
+          </Link>
+        )}
       </p>
     </div>
   );
