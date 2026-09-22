@@ -45,6 +45,11 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/methodology" className="hover:text-foreground">
+                  Methodology
+                </Link>
+              </li>
+              <li>
                 <Link href="/dashboard" prefetch={false} className="hover:text-foreground">
                   Member Dashboard
                 </Link>

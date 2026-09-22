@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
   { href: "/pain-index", label: "Pain Index" },
+  { href: "/methodology", label: "Methodology" },
   { href: "/#why-now", label: "Why Now" },
 ] as const;
 
