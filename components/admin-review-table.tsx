@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { verifyPainSubmission } from "@/app/admin/actions";
+import { getEvidenceSignedUrl, verifyPainSubmission } from "@/app/admin/actions";
 import { Badge } from "@/components/ui/badge";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -72,8 +72,10 @@ export function AdminReviewTable({ rows }: { rows: AdminReviewRow[] }) {
 
 function ReviewRow({ row }: { row: AdminReviewRow }) {
   const [pending, startTransition] = useTransition();
+  const [opening, setOpening] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const awaitingReview = row.verificationStatus === "evidence_supplied";
+  const evidenceId = row.evidence[0]?.id;
 
   function verify() {
     setMessage(null);
@@ -85,6 +87,22 @@ function ReviewRow({ row }: { row: AdminReviewRow }) {
       }
       setMessage("Marked Independently verified.");
     });
+  }
+
+  async function viewEvidence() {
+    if (!evidenceId) return;
+    setMessage(null);
+    setOpening(true);
+    try {
+      const result = await getEvidenceSignedUrl(evidenceId);
+      if (!result.ok) {
+        setMessage(result.message);
+        return;
+      }
+      window.open(result.url, "_blank", "noopener,noreferrer");
+    } finally {
+      setOpening(false);
+    }
   }
 
   return (
@@ -109,13 +127,15 @@ function ReviewRow({ row }: { row: AdminReviewRow }) {
         {row.evidence.length === 0 ? (
           <span className="text-xs text-muted-foreground">None on file</span>
         ) : (
-          <ButtonLink
-            href={`/admin/evidence/${row.evidence[0].id}`}
+          <Button
+            type="button"
             variant="outline"
             size="sm"
+            disabled={opening}
+            onClick={viewEvidence}
           >
-            View Evidence
-          </ButtonLink>
+            {opening ? "Opening…" : "View Evidence"}
+          </Button>
         )}
       </TableCell>
       <TableCell className="text-right">

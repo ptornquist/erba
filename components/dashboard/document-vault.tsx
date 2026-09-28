@@ -36,6 +36,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { humaniseSupabaseError } from "@/lib/errors";
+import { createEvidenceViewUrl } from "@/lib/create-evidence-view-url";
+import { EVIDENCE_BUCKET, evidenceObjectPath, evidenceStoragePath, isHttpUrl } from "@/lib/evidence";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import {
@@ -92,6 +94,7 @@ export function DocumentVault({
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -124,17 +127,35 @@ export function DocumentVault({
 
     setUploading(true);
     try {
-      // Storage upload is mocked for the MVP: we persist the metadata row with a
-      // deterministic vault URI so the table, export and RLS paths are exercised.
-      const objectPath = `${companyId}/${Date.now()}-${parsed.data.file_name}`;
-      const fileUrl = `vault://erba/${objectPath}`;
+      if (!selectedFile) {
+        setUploadError("Choose a file to upload");
+        return;
+      }
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Sign in again to upload documents.");
+      }
 
-      const { data, error: insertError } = await createClient()
+      const objectPath = evidenceObjectPath(user.id, parsed.data.file_name);
+      const { error: uploadError } = await supabase.storage
+        .from(EVIDENCE_BUCKET)
+        .upload(objectPath, selectedFile, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: selectedFile.type || undefined,
+        });
+      if (uploadError) throw uploadError;
+
+      const { data, error: insertError } = await supabase
         .from("document_vault")
         .insert({
           company_id: companyId,
           file_name: parsed.data.file_name,
-          file_url: fileUrl,
+          file_url: objectPath,
+          storage_path: objectPath,
         })
         .select("*")
         .single();
@@ -171,9 +192,55 @@ export function DocumentVault({
     }
   }
 
+  async function openDocument(doc: DocumentVaultItem) {
+    setError(null);
+    const directUrl = isHttpUrl(doc.file_url) ? doc.file_url : null;
+    const objectPath = evidenceStoragePath(doc.storage_path, doc.file_url);
+
+    if (!directUrl && !objectPath) {
+      setError("This file is not stored in the evidence-vault yet.");
+      return;
+    }
+
+    setOpeningId(doc.id);
+    try {
+      if (directUrl) {
+        window.open(directUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      if (!objectPath) {
+        setError("This file is not stored in the evidence-vault yet.");
+        return;
+      }
+
+      const signedUrl = await createEvidenceViewUrl(createClient(), objectPath);
+      if (!signedUrl) {
+        setError("Could not create a signed URL from the evidence-vault.");
+        return;
+      }
+      window.open(signedUrl, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(
+        humaniseSupabaseError(
+          err,
+          "Could not open the document from the evidence-vault.",
+        ),
+      );
+    } finally {
+      setOpeningId(null);
+    }
+  }
+
   async function copyLink(doc: DocumentVaultItem) {
     try {
-      await navigator.clipboard.writeText(doc.file_url);
+      const objectPath = evidenceStoragePath(doc.storage_path, doc.file_url);
+      const url = isHttpUrl(doc.file_url)
+        ? doc.file_url
+        : objectPath
+          ? await createEvidenceViewUrl(createClient(), objectPath)
+          : null;
+      await navigator.clipboard.writeText(url ?? doc.file_url);
       setCopiedId(doc.id);
       window.setTimeout(() => setCopiedId(null), 1500);
     } catch {
@@ -336,24 +403,20 @@ export function DocumentVault({
                                 <Copy className="size-4" />
                               )}
                             </button>
-                            <a
-                              href={doc.file_url.startsWith("http") ? doc.file_url : undefined}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-disabled={!doc.file_url.startsWith("http")}
+                            <button
+                              type="button"
+                              onClick={() => void openDocument(doc)}
                               aria-label={`Open ${doc.file_name}`}
-                              title={
-                                doc.file_url.startsWith("http")
-                                  ? "Open document"
-                                  : "Storage delivery not enabled in this environment"
-                              }
-                              className={cn(
-                                "rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
-                                !doc.file_url.startsWith("http") && "cursor-not-allowed opacity-50",
-                              )}
+                              title="Open document"
+                              disabled={openingId === doc.id}
+                              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
                             >
-                              <ExternalLink className="size-4" />
-                            </a>
+                              {openingId === doc.id ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <ExternalLink className="size-4" />
+                              )}
+                            </button>
                             <button
                               type="button"
                               onClick={() => deleteDocument(doc)}
