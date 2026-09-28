@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Trophy,
 } from "lucide-react";
+import { BurdenChart } from "@/components/burden-chart";
 import {
   MethodologyStatement,
   VerificationTiers,
@@ -107,6 +108,10 @@ export default async function PainIndexPage() {
             />
           </dl>
         </div>
+      </section>
+
+      <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <BurdenChart />
       </section>
 
       <section className="border-y border-border/60 bg-card/40">

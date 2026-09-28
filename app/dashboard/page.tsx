@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Building2, Euro, FileText, Plus } from "lucide-react";
+import { BurdenChart } from "@/components/burden-chart";
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -15,7 +16,11 @@ import {
 } from "@/components/ui/card";
 import { getDashboardContext } from "@/lib/dashboard";
 import { formatEur, toNumber } from "@/lib/utils";
-import type { PainSubmission } from "@/types/database";
+import {
+  PLACEHOLDER_INDUSTRY_AVERAGES,
+  type IndustryAverage,
+} from "@/lib/visualization-placeholders";
+import type { Company, PainSubmission } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Overview",
@@ -45,6 +50,12 @@ export default async function DashboardOverviewPage() {
     (sum, s) => sum + toNumber(s.estimated_cost_eur),
     0,
   );
+
+  const liveIndustryAverages = averageCostByIndustry(companies, submissions);
+  const industryChartData =
+    liveIndustryAverages.length > 0
+      ? liveIndustryAverages
+      : PLACEHOLDER_INDUSTRY_AVERAGES;
 
   return (
     <>
@@ -97,6 +108,10 @@ export default async function DashboardOverviewPage() {
                   ) || null,
                 signatoryName: fullName,
               }}
+            />
+            <BurdenChart
+              data={industryChartData}
+              isPlaceholder={liveIndustryAverages.length === 0}
             />
           </section>
 
@@ -229,4 +244,28 @@ export default async function DashboardOverviewPage() {
       </div>
     </>
   );
+}
+
+function averageCostByIndustry(
+  companies: Company[],
+  submissions: PainSubmission[],
+): IndustryAverage[] {
+  const industryByCompany = new Map(
+    companies.map((company) => [company.id, company.industry]),
+  );
+  const buckets = new Map<string, { total: number; count: number }>();
+
+  for (const submission of submissions) {
+    const industry = industryByCompany.get(submission.company_id);
+    if (!industry) continue;
+    const entry = buckets.get(industry) ?? { total: 0, count: 0 };
+    entry.total += toNumber(submission.estimated_cost_eur);
+    entry.count += 1;
+    buckets.set(industry, entry);
+  }
+
+  return Array.from(buckets.entries()).map(([industry, { total, count }]) => ({
+    industry,
+    averageCostEur: count > 0 ? total / count : 0,
+  }));
 }

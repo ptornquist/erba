@@ -16,6 +16,7 @@ import {
 } from "@/components/ledger-standards";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { CumulativeBurdenTicker } from "@/components/cumulative-burden-ticker";
 import { MOMENTUM_STATS } from "@/lib/constants";
 import { formatInteger } from "@/lib/utils";
 
@@ -99,32 +100,22 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Isolated ticker: pass totalEur from a live SUM query when wired. */}
+      <CumulativeBurdenTicker />
+
       <section
         aria-label="Momentum"
-        className="border-y border-primary/40 bg-primary text-primary-foreground"
+        className="border-b border-border/60 bg-secondary/50"
       >
-        <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-white/20 px-4 sm:grid-cols-2 sm:divide-x sm:divide-y-0 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center gap-4 py-8 sm:py-10">
-            <Users className="size-10 shrink-0 opacity-90" aria-hidden="true" />
-            <div>
-              <p className="font-mono text-4xl font-black tabular-nums tracking-tight sm:text-5xl">
-                {formatInteger(MOMENTUM_STATS.companiesJoined)}
-              </p>
-              <p className="text-sm font-semibold uppercase tracking-widest opacity-90">
-                Companies Joined
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center justify-center gap-4 py-8 sm:py-10">
-            <Euro className="size-10 shrink-0 opacity-90" aria-hidden="true" />
-            <div>
-              <p className="font-mono text-4xl font-black tabular-nums tracking-tight sm:text-5xl">
-                {MOMENTUM_STATS.documentedCostsLabel}
-              </p>
-              <p className="text-sm font-semibold uppercase tracking-widest opacity-90">
-                Documented Compliance Costs
-              </p>
-            </div>
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-4 px-4 py-8 sm:px-6 lg:px-8">
+          <Users className="size-10 shrink-0 text-primary" aria-hidden="true" />
+          <div>
+            <p className="font-mono text-4xl font-black tabular-nums tracking-tight text-primary sm:text-5xl">
+              {formatInteger(MOMENTUM_STATS.companiesJoined)}
+            </p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              Companies Joined
+            </p>
           </div>
         </div>
       </section>
