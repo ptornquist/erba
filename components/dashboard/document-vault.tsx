@@ -37,9 +37,10 @@ import {
 } from "@/components/ui/table";
 import { humaniseSupabaseError } from "@/lib/errors";
 import { createEvidenceViewUrl } from "@/lib/create-evidence-view-url";
-import { EVIDENCE_BUCKET, evidenceObjectPath, evidenceStoragePath, isHttpUrl } from "@/lib/evidence";
+import { evidenceStoragePath, isHttpUrl } from "@/lib/evidence";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { uploadVaultDocument } from "@/app/dashboard/vault/actions";
 import {
   ALLOWED_DOCUMENT_EXTENSIONS,
   documentUploadSchema,
@@ -131,37 +132,18 @@ export function DocumentVault({
         setUploadError("Choose a file to upload");
         return;
       }
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Sign in again to upload documents.");
+
+      const payload = new FormData();
+      payload.append("companyId", companyId);
+      payload.append("file", selectedFile);
+
+      const result = await uploadVaultDocument(payload);
+      if (!result.ok) {
+        setUploadError(result.message);
+        return;
       }
 
-      const objectPath = evidenceObjectPath(user.id, parsed.data.file_name);
-      const { error: uploadError } = await supabase.storage
-        .from(EVIDENCE_BUCKET)
-        .upload(objectPath, selectedFile, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: selectedFile.type || undefined,
-        });
-      if (uploadError) throw uploadError;
-
-      const { data, error: insertError } = await supabase
-        .from("document_vault")
-        .insert({
-          company_id: companyId,
-          file_name: parsed.data.file_name,
-          file_url: objectPath,
-          storage_path: objectPath,
-        })
-        .select("*")
-        .single();
-      if (insertError) throw insertError;
-
-      setDocuments((prev) => [data, ...prev]);
+      setDocuments((prev) => [result.document, ...prev]);
       closeUpload();
     } catch (err) {
       setUploadError(
