@@ -73,6 +73,8 @@ create table if not exists public.pain_submissions (
   external_compliance_cost_eur numeric(14, 2) not null default 0,
   estimated_cost_eur numeric(14, 2) not null,
   verification_status public.verification_status not null default 'self_reported',
+  evidence_path text,
+  evidence_file_name text,
   scm_tool_reference text not null default 'EU Better Regulation Toolbox — Tool #58',
   constraint pain_submissions_company_id_fkey
     foreign key (company_id) references public.companies (id)
@@ -193,8 +195,8 @@ create policy profiles_select_own
   to authenticated
   using ((select auth.uid()) = id);
 
--- Compliance files. RLS is on and no Data API policies are granted, so only
--- the service role (used after profiles.is_admin is confirmed) can read these rows.
+-- Compliance files. Authenticated owners may insert their own evidence.
+-- Admins read files through the service-role evidence route after is_admin is confirmed.
 create table if not exists public.document_vault (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null,
@@ -219,3 +221,70 @@ create index if not exists document_vault_pain_submission_id_idx
 comment on table public.document_vault is 'Private compliance evidence. Readable only through the admin server path.';
 
 alter table public.document_vault enable row level security;
+
+alter table public.document_vault
+  add column if not exists file_url text,
+  add column if not exists storage_path text,
+  add column if not exists pain_submission_id uuid;
+
+alter table public.pain_submissions
+  add column if not exists evidence_path text,
+  add column if not exists evidence_file_name text;
+
+comment on column public.pain_submissions.evidence_path is 'Object path in the evidence-vault storage bucket.';
+comment on column public.pain_submissions.evidence_file_name is 'Original filename for the attached compliance evidence.';
+
+drop policy if exists document_vault_owner_insert on public.document_vault;
+create policy document_vault_owner_insert
+  on public.document_vault
+  for insert
+  to authenticated
+  with check (
+    exists (
+      select 1
+      from public.companies c
+      where c.id = company_id
+        and c.profile_id = (select auth.uid())
+    )
+  );
+
+drop policy if exists document_vault_owner_select on public.document_vault;
+create policy document_vault_owner_select
+  on public.document_vault
+  for select
+  to authenticated
+  using (
+    exists (
+      select 1
+      from public.companies c
+      where c.id = company_id
+        and c.profile_id = (select auth.uid())
+    )
+  );
+
+grant insert, select on table public.document_vault to authenticated;
+
+insert into storage.buckets (id, name, public)
+values ('evidence-vault', 'evidence-vault', false)
+on conflict (id) do nothing;
+
+drop policy if exists "evidence-vault: owner insert" on storage.objects;
+create policy "evidence-vault: owner insert"
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'evidence-vault'
+    and split_part(name, '/', 1) = (select auth.uid())::text
+  );
+
+drop policy if exists "evidence-vault: owner select" on storage.objects;
+create policy "evidence-vault: owner select"
+  on storage.objects
+  for select
+  to authenticated
+  using (
+    bucket_id = 'evidence-vault'
+    and split_part(name, '/', 1) = (select auth.uid())::text
+  );
+

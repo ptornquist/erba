@@ -22,6 +22,8 @@ import { Select } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/form-field";
+import { EvidenceUploadZone } from "@/components/join/evidence-upload";
+import { attachComplianceEvidence } from "@/lib/attach-evidence";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   INDUSTRIES,
@@ -60,6 +62,9 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   const [step, setStep] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [needsEmailConfirmation, setNeedsEmailConfirmation] = useState(false);
+  const [pendingEvidence, setPendingEvidence] = useState(false);
+  const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
 
   const form = useForm<JoinFormValues>({
     resolver: zodResolver(joinSchema),
@@ -106,6 +111,8 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
   }
 
   async function skipPainAndJoin() {
+    setEvidenceFile(null);
+    setEvidenceError(null);
     setValue("regulation", "");
     setValue("estimatedCostEur", undefined);
     setValue("description", "");
@@ -185,7 +192,9 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
       if (!signUpData.session) {
         // Rows are provisioned by the database trigger; the member unlocks
-        // the dashboard once they confirm their email.
+        // the dashboard once they confirm their email. Storage upload needs
+        // a live session, so evidence is deferred until they sign in.
+        setPendingEvidence(Boolean(evidenceFile));
         setNeedsEmailConfirmation(true);
         return;
       }
@@ -208,12 +217,14 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         if (profileError) throw profileError;
       }
 
-      const { count: companyCount } = await supabase
+      const { data: existingCompany } = await supabase
         .from("companies")
-        .select("id", { count: "exact", head: true })
-        .eq("profile_id", user.id);
+        .select("id")
+        .eq("profile_id", user.id)
+        .maybeSingle();
 
-      if (!companyCount) {
+      let companyId = existingCompany?.id;
+      if (!companyId) {
         const { data: company, error: companyError } = await supabase
           .from("companies")
           .insert({
@@ -226,17 +237,46 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
           .select("id")
           .single();
         if (companyError) throw companyError;
+        companyId = company.id;
+      }
 
-        if (includePain && company) {
-          const { error: painError } = await supabase
+      if (includePain && companyId) {
+        const { data: existingPain } = await supabase
+          .from("pain_submissions")
+          .select("id")
+          .eq("company_id", companyId)
+          .maybeSingle();
+
+        let submissionId = existingPain?.id;
+        if (!submissionId) {
+          const { data: pain, error: painError } = await supabase
             .from("pain_submissions")
             .insert({
-              company_id: company.id,
+              company_id: companyId,
               regulation_name: values.regulation as string,
               estimated_cost_eur: values.estimatedCostEur as number,
+              internal_admin_cost_eur: values.estimatedCostEur as number,
+              external_compliance_cost_eur: 0,
               description: values.description ? values.description : null,
-            });
+              verification_status: "self_reported",
+            })
+            .select("id")
+            .single();
           if (painError) throw painError;
+          submissionId = pain.id;
+        }
+
+        if (!submissionId) {
+          throw new Error("Could not save your Pain Index entry.");
+        }
+
+        if (evidenceFile) {
+          await attachComplianceEvidence(supabase, {
+            userId: user.id,
+            companyId,
+            submissionId,
+            file: evidenceFile,
+          });
         }
       }
 
@@ -267,6 +307,9 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
             {form.getValues("email")}
           </span>
           . Click it to unlock your member dashboard.
+          {pendingEvidence
+            ? " After you sign in, upload your compliance evidence from the dashboard so the record can move to Evidence supplied."
+            : null}
         </p>
         <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
           <ButtonLink href="/pain-index" variant="outline">
@@ -602,6 +645,13 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                 {...register("description")}
               />
             </FormField>
+            <EvidenceUploadZone
+              file={evidenceFile}
+              error={evidenceError}
+              disabled={isSubmitting}
+              onFileChange={setEvidenceFile}
+              onError={setEvidenceError}
+            />
           </fieldset>
         )}
 

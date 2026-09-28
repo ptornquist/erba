@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { verifyPainSubmission } from "@/app/admin/actions";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -28,7 +28,7 @@ export type AdminReviewRow = {
 const STATUS_LABEL: Record<VerificationStatus, string> = {
   self_reported: "Self-reported",
   evidence_supplied: "Evidence supplied",
-  verified: "ERBA verified",
+  verified: "Independently verified",
 };
 
 const STATUS_VARIANT: Record<
@@ -83,7 +83,7 @@ function ReviewRow({ row }: { row: AdminReviewRow }) {
         setMessage(result.message);
         return;
       }
-      setMessage("Marked ERBA verified.");
+      setMessage("Marked Independently verified.");
     });
   }
 
@@ -109,17 +109,13 @@ function ReviewRow({ row }: { row: AdminReviewRow }) {
         {row.evidence.length === 0 ? (
           <span className="text-xs text-muted-foreground">None on file</span>
         ) : (
-          <div className="flex flex-col items-start gap-1">
-            {row.evidence.map((file) => (
-              <a
-                key={file.id}
-                href={`/admin/evidence/${file.id}`}
-                className="text-xs font-medium text-primary underline-offset-2 hover:underline"
-              >
-                {file.fileName}
-              </a>
-            ))}
-          </div>
+          <ButtonLink
+            href={`/admin/evidence/${row.evidence[0].id}`}
+            variant="outline"
+            size="sm"
+          >
+            View Evidence
+          </ButtonLink>
         )}
       </TableCell>
       <TableCell className="text-right">
@@ -129,7 +125,7 @@ function ReviewRow({ row }: { row: AdminReviewRow }) {
           disabled={!awaitingReview || pending}
           onClick={verify}
         >
-          {pending ? "Verifying…" : "Verify Data"}
+          {pending ? "Verifying…" : "Verify"}
         </Button>
       </TableCell>
     </TableRow>

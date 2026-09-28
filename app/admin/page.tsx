@@ -75,18 +75,42 @@ export default async function AdminPage() {
   );
 }
 
+async function loadSubmissions(admin: ReturnType<typeof createAdminDataClient>) {
+  const withEvidence = await admin
+    .from("pain_submissions")
+    .select(
+      "id, company_id, regulation_name, estimated_cost_eur, verification_status, evidence_path, evidence_file_name",
+    );
+
+  if (!withEvidence.error) {
+    return withEvidence;
+  }
+
+  return admin
+    .from("pain_submissions")
+    .select(
+      "id, company_id, regulation_name, estimated_cost_eur, verification_status",
+    );
+}
+
+async function loadVault(admin: ReturnType<typeof createAdminDataClient>) {
+  const withLink = await admin
+    .from("document_vault")
+    .select("id, company_id, pain_submission_id, file_name");
+
+  if (!withLink.error) {
+    return withLink;
+  }
+
+  return admin.from("document_vault").select("id, company_id, file_name");
+}
+
 async function loadReviewQueue(): Promise<AdminReviewRow[]> {
   const admin = createAdminDataClient();
   const [companiesResult, submissionsResult, vaultResult] = await Promise.all([
     admin.from("companies").select("id, name, industry"),
-    admin
-      .from("pain_submissions")
-      .select(
-        "id, company_id, regulation_name, estimated_cost_eur, verification_status",
-      ),
-    admin
-      .from("document_vault")
-      .select("id, company_id, pain_submission_id, file_name"),
+    loadSubmissions(admin),
+    loadVault(admin),
   ]);
 
   const failure =
@@ -104,12 +128,38 @@ async function loadReviewQueue(): Promise<AdminReviewRow[]> {
     .map((submission) => {
       const company = companies.get(submission.company_id);
       const status = submission.verification_status ?? "self_reported";
-      const evidence = documents.filter(
-        (file) =>
+      const vaultFiles = documents.filter((file) => {
+        const linkedId =
+          "pain_submission_id" in file ? file.pain_submission_id : null;
+        return (
           file.company_id === submission.company_id &&
-          (file.pain_submission_id == null ||
-            file.pain_submission_id === submission.id),
-      );
+          (linkedId == null || linkedId === submission.id)
+        );
+      });
+      const evidencePath =
+        "evidence_path" in submission &&
+        typeof submission.evidence_path === "string"
+          ? submission.evidence_path
+          : null;
+      const evidenceFileName =
+        "evidence_file_name" in submission &&
+        typeof submission.evidence_file_name === "string"
+          ? submission.evidence_file_name
+          : "View Evidence";
+      const evidence: AdminReviewRow["evidence"] =
+        vaultFiles.length > 0
+          ? vaultFiles.map((file) => ({
+              id: file.id,
+              fileName: file.file_name,
+            }))
+          : evidencePath
+            ? [
+                {
+                  id: submission.id,
+                  fileName: evidenceFileName,
+                },
+              ]
+            : [];
 
       return {
         id: submission.id,
@@ -118,10 +168,7 @@ async function loadReviewQueue(): Promise<AdminReviewRow[]> {
         regulationName: submission.regulation_name,
         estimatedCostEur: Number(submission.estimated_cost_eur),
         verificationStatus: status,
-        evidence: evidence.map((file) => ({
-          id: file.id,
-          fileName: file.file_name,
-        })),
+        evidence,
       };
     })
     .sort(

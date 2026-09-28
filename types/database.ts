@@ -44,6 +44,10 @@ export type PainSubmission = {
   estimated_cost_eur: number | string;
   description: string | null;
   verification_status: VerificationStatus;
+  evidence_path: string | null;
+  evidence_file_name: string | null;
+  internal_admin_cost_eur?: number | string;
+  external_compliance_cost_eur?: number | string;
   created_at: Timestamptz;
 };
 
@@ -57,9 +61,22 @@ export type CompanyUpdate = Partial<Company>;
 
 export type PainSubmissionInsert = Omit<
   PainSubmission,
-  "id" | "created_at" | "verification_status"
+  | "id"
+  | "created_at"
+  | "verification_status"
+  | "evidence_path"
+  | "evidence_file_name"
 > &
-  Partial<Pick<PainSubmission, "id" | "created_at" | "verification_status">>;
+  Partial<
+    Pick<
+      PainSubmission,
+      | "id"
+      | "created_at"
+      | "verification_status"
+      | "evidence_path"
+      | "evidence_file_name"
+    >
+  >;
 export type PainSubmissionUpdate = Partial<PainSubmission>;
 
 export const IMPACT_LEVELS = ["High", "Med", "Low"] as const;
@@ -102,10 +119,19 @@ export type DocumentVaultItem = {
   storage_path?: string | null;
   pain_submission_id?: UUID | null;
   uploaded_at: Timestamptz;
+  created_at?: Timestamptz;
 };
 
-export type DocumentVaultItemInsert = Omit<DocumentVaultItem, "id" | "uploaded_at"> &
-  Partial<Pick<DocumentVaultItem, "id" | "uploaded_at">>;
+export type DocumentVaultItemInsert = Omit<
+  DocumentVaultItem,
+  "id" | "uploaded_at" | "created_at"
+> &
+  Partial<
+    Pick<
+      DocumentVaultItem,
+      "id" | "uploaded_at" | "created_at" | "file_url" | "storage_path"
+    >
+  >;
 export type DocumentVaultItemUpdate = Partial<DocumentVaultItem>;
 
 /** A post in the Alliance Networking Hub, authored on behalf of a company. */

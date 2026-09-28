@@ -37,6 +37,33 @@ create table if not exists public.pain_submissions (
 );
 create index if not exists pain_submissions_company_id_idx on public.pain_submissions (company_id);
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_type t
+    join pg_namespace n on n.oid = t.typnamespace
+    where t.typname = 'verification_status'
+      and n.nspname = 'public'
+  ) then
+    create type public.verification_status as enum (
+      'self_reported',
+      'evidence_supplied',
+      'verified'
+    );
+  end if;
+end
+$$;
+
+alter table public.pain_submissions
+  add column if not exists verification_status public.verification_status not null default 'self_reported',
+  add column if not exists evidence_path text,
+  add column if not exists evidence_file_name text;
+
+alter table public.document_vault
+  add column if not exists storage_path text,
+  add column if not exists pain_submission_id uuid;
+
 -- ---------------------------------------------------------------------------
 -- Enterprise dashboard tables
 -- ---------------------------------------------------------------------------
@@ -165,6 +192,14 @@ create policy "pain_submissions: public read" on public.pain_submissions
 drop policy if exists "pain_submissions: owner insert" on public.pain_submissions;
 create policy "pain_submissions: owner insert" on public.pain_submissions
   for insert to authenticated with check (private.owns_company(company_id));
+
+drop policy if exists pain_submissions_update_evidence on public.pain_submissions;
+create policy pain_submissions_update_evidence
+  on public.pain_submissions
+  for update
+  to authenticated
+  using (verification_status = 'self_reported')
+  with check (verification_status = 'evidence_supplied');
 
 -- policy_updates: read-only for members; written by service role / staff only.
 drop policy if exists "policy_updates: member read" on public.policy_updates;
