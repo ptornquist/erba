@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Building2, Euro, FileText, Plus } from "lucide-react";
-import { BurdenChart } from "@/components/burden-chart";
+import { IndustryBreakdownChart } from "@/app/dashboard/industry-breakdown-chart";
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -81,7 +81,14 @@ export default async function DashboardOverviewPage() {
         }
       />
 
-      <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+      <div className="mt-8 w-full">
+        <IndustryBreakdownChart
+          data={industryChartData}
+          isPlaceholder={liveIndustryAverages.length === 0}
+        />
+      </div>
+
+      <div className="mt-8 grid gap-8 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-8">
           <section aria-labelledby="war-room-heading" className="space-y-4">
             <div className="flex items-center justify-between">
@@ -108,10 +115,6 @@ export default async function DashboardOverviewPage() {
                   ) || null,
                 signatoryName: fullName,
               }}
-            />
-            <BurdenChart
-              data={industryChartData}
-              isPlaceholder={liveIndustryAverages.length === 0}
             />
           </section>
 
