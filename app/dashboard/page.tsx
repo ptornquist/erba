@@ -5,6 +5,7 @@ import { IndustryBreakdownChart } from "@/app/dashboard/industry-breakdown-chart
 import { BurdenAlertCard } from "@/components/dashboard/burden-alert-card";
 import { ReferralTracker } from "@/components/dashboard/referral-tracker";
 import { PageHeader } from "@/components/dashboard/page-header";
+import { SocialShareCard } from "@/components/social-share-card";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import {
@@ -217,6 +218,8 @@ export default async function DashboardOverviewPage() {
               referralCount={referralCount ?? 0}
             />
           </section>
+
+          <SocialShareCard />
 
           <Card className="bg-secondary/40">
             <CardHeader>
