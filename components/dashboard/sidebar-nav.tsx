@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ClipboardCheck,
+  Euro,
   FolderLock,
   LayoutDashboard,
   MessagesSquare,
@@ -29,6 +30,13 @@ export const DASHBOARD_NAV: NavItem[] = [
     description: "War Room & referrals",
     icon: LayoutDashboard,
     exact: true,
+  },
+  {
+    href: "/dashboard/report",
+    label: "Cost reporting",
+    shortLabel: "Costs",
+    description: "Standard Cost Model intake",
+    icon: Euro,
   },
   {
     href: "/dashboard/policy",

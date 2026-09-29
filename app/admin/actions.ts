@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminDataClient, requireAdmin } from "@/lib/admin";
 import { signedEvidenceViewUrl } from "@/lib/admin-evidence";
+import { VERIFICATION_TIER } from "@/lib/scm";
 
 export async function verifyPainSubmission(submissionId: string) {
   await requireAdmin();
@@ -26,6 +27,12 @@ export async function verifyPainSubmission(submissionId: string) {
       message: "Only evidence-supplied submissions can be verified.",
     };
   }
+
+  await admin
+    .from("compliance_costs")
+    .update({ verification_tier: VERIFICATION_TIER.verified })
+    .eq("pain_submission_id", submissionId)
+    .eq("verification_tier", VERIFICATION_TIER.evidence_supplied);
 
   revalidatePath("/admin");
   return { ok: true as const };

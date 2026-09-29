@@ -64,6 +64,8 @@ export const TURNOVER_BANDS = [
 
 export const REGULATIONS = [
   "CSRD",
+  "NIS2",
+  "AI Act",
   "Supply Chain Act",
   "Deforestation",
   "Other",
@@ -72,6 +74,8 @@ export const REGULATIONS = [
 export const REGULATION_LABELS: Record<(typeof REGULATIONS)[number], string> =
   {
     CSRD: "CSRD (Corporate Sustainability Reporting Directive)",
+    NIS2: "NIS2 (Network and Information Security)",
+    "AI Act": "AI Act",
     "Supply Chain Act": "Supply Chain Act (CSDDD)",
     Deforestation: "Deforestation Regulation (EUDR)",
     Other: "Other",

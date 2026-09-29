@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/form-field";
 import { EvidenceUploadZone } from "@/components/join/evidence-upload";
 import { attachComplianceEvidence } from "@/lib/attach-evidence";
+import { asNonNegativeNumber, scmNormalisedCost, VERIFICATION_TIER } from "@/lib/scm";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import {
   INDUSTRIES,
@@ -42,13 +43,25 @@ import {
 } from "@/lib/validations/join";
 import { humaniseSupabaseError } from "@/lib/errors";
 import { hardNavigate } from "@/lib/navigation";
-import { cn, generateReferralCode } from "@/lib/utils";
+import { cn, formatEur, generateReferralCode } from "@/lib/utils";
 
 const STEPS = [
   { title: "Account", description: "Who you are", icon: UserRound },
   { title: "Membership", description: "Company or individual", icon: Building2 },
   { title: "Pain Index", description: "Optional", icon: Euro },
 ] as const;
+
+function optionalNumber() {
+  return {
+    setValueAs: (value: unknown) => {
+      if (value === "" || value === null || value === undefined) {
+        return undefined;
+      }
+      const parsed = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    },
+  };
+}
 
 interface JoinWizardProps {
   onSwitchToSignIn: () => void;
@@ -81,6 +94,11 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
       regulation: undefined,
       estimatedCostEur: undefined,
       description: "",
+      internalAdminHours: undefined,
+      averageHourlyWage: undefined,
+      externalConsultingCost: undefined,
+      itAndSystemCost: undefined,
+      capitalCost: undefined,
     },
   });
 
@@ -95,7 +113,23 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
   const isAnonymous = useWatch({ control, name: "isAnonymous" });
   const memberType = useWatch({ control, name: "memberType" });
+  const internalAdminHours = useWatch({ control, name: "internalAdminHours" });
+  const averageHourlyWage = useWatch({ control, name: "averageHourlyWage" });
+  const externalConsultingCost = useWatch({
+    control,
+    name: "externalConsultingCost",
+  });
+  const itAndSystemCost = useWatch({ control, name: "itAndSystemCost" });
+  const capitalCost = useWatch({ control, name: "capitalCost" });
   const isLastStep = step === STEPS.length - 1;
+
+  const modelledCost = scmNormalisedCost({
+    internal_admin_hours: asNonNegativeNumber(internalAdminHours),
+    average_hourly_wage: asNonNegativeNumber(averageHourlyWage),
+    external_consulting_cost: asNonNegativeNumber(externalConsultingCost),
+    it_and_system_cost: asNonNegativeNumber(itAndSystemCost),
+    capital_cost: asNonNegativeNumber(capitalCost),
+  });
 
   async function goNext() {
     const valid = await trigger(stepFields(step, memberType), { shouldFocus: true });
@@ -116,6 +150,11 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
     setValue("regulation", "");
     setValue("estimatedCostEur", undefined);
     setValue("description", "");
+    setValue("internalAdminHours", undefined);
+    setValue("averageHourlyWage", undefined);
+    setValue("externalConsultingCost", undefined);
+    setValue("itAndSystemCost", undefined);
+    setValue("capitalCost", undefined);
     await handleSubmit(onSubmit)();
   }
 
@@ -159,6 +198,21 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
         estimated_cost_eur: includePain ? values.estimatedCostEur : null,
         description:
           includePain && values.description ? values.description : null,
+        internal_admin_hours: includePain
+          ? asNonNegativeNumber(values.internalAdminHours)
+          : null,
+        average_hourly_wage: includePain
+          ? asNonNegativeNumber(values.averageHourlyWage)
+          : null,
+        external_consulting_cost: includePain
+          ? asNonNegativeNumber(values.externalConsultingCost)
+          : null,
+        it_and_system_cost: includePain
+          ? asNonNegativeNumber(values.itAndSystemCost)
+          : null,
+        capital_cost: includePain
+          ? asNonNegativeNumber(values.capitalCost)
+          : null,
         referred_by: referredBy,
       };
 
@@ -268,6 +322,31 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
 
         if (!submissionId) {
           throw new Error("Could not save your Pain Index entry.");
+        }
+
+        const { data: existingCost } = await supabase
+          .from("compliance_costs")
+          .select("id")
+          .eq("pain_submission_id", submissionId)
+          .maybeSingle();
+
+        if (!existingCost) {
+          const { error: costError } = await supabase.from("compliance_costs").insert({
+            company_id: companyId,
+            pain_submission_id: submissionId,
+            framework_name: values.regulation as string,
+            internal_admin_hours: asNonNegativeNumber(values.internalAdminHours),
+            average_hourly_wage: asNonNegativeNumber(values.averageHourlyWage),
+            external_consulting_cost: asNonNegativeNumber(
+              values.externalConsultingCost,
+            ),
+            it_and_system_cost: asNonNegativeNumber(values.itAndSystemCost),
+            capital_cost: asNonNegativeNumber(values.capitalCost),
+            total_reported_cost: values.estimatedCostEur as number,
+            verification_tier: VERIFICATION_TIER.self_reported,
+            evidence_documents: [],
+          });
+          if (costError) throw costError;
         }
 
         if (evidenceFile) {
@@ -619,18 +698,115 @@ export function JoinWizard({ onSwitchToSignIn }: JoinWizardProps) {
                   placeholder="250000"
                   className="pl-8 font-mono"
                   aria-invalid={Boolean(errors.estimatedCostEur)}
-                  {...register("estimatedCostEur", {
-                    setValueAs: (value) => {
-                      if (value === "" || value === null || value === undefined) {
-                        return undefined;
-                      }
-                      const parsed = typeof value === "number" ? value : Number(value);
-                      return Number.isFinite(parsed) ? parsed : undefined;
-                    },
-                  })}
+                  {...register("estimatedCostEur", optionalNumber())}
                 />
               </div>
             </FormField>
+            <div className="rounded-lg border border-border bg-secondary/70 p-4">
+              <p className="text-sm font-semibold text-foreground">
+                EU Standard Cost Model
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Optional line items. ERBA computes a normalised total in the
+                background: staff hours × wage, plus consulting, IT and capital
+                costs.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField
+                id="internalAdminHours"
+                label="Internal admin hours"
+                optional
+                error={errors.internalAdminHours?.message}
+              >
+                <Input
+                  id="internalAdminHours"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1}
+                  placeholder="800"
+                  aria-invalid={Boolean(errors.internalAdminHours)}
+                  {...register("internalAdminHours", optionalNumber())}
+                />
+              </FormField>
+              <FormField
+                id="averageHourlyWage"
+                label="Average hourly wage (EUR)"
+                optional
+                error={errors.averageHourlyWage?.message}
+              >
+                <Input
+                  id="averageHourlyWage"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1}
+                  placeholder="45"
+                  aria-invalid={Boolean(errors.averageHourlyWage)}
+                  {...register("averageHourlyWage", optionalNumber())}
+                />
+              </FormField>
+              <FormField
+                id="externalConsultingCost"
+                label="External consulting (EUR)"
+                optional
+                error={errors.externalConsultingCost?.message}
+              >
+                <Input
+                  id="externalConsultingCost"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1000}
+                  placeholder="40000"
+                  aria-invalid={Boolean(errors.externalConsultingCost)}
+                  {...register("externalConsultingCost", optionalNumber())}
+                />
+              </FormField>
+              <FormField
+                id="itAndSystemCost"
+                label="IT and systems (EUR)"
+                optional
+                error={errors.itAndSystemCost?.message}
+              >
+                <Input
+                  id="itAndSystemCost"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1000}
+                  placeholder="15000"
+                  aria-invalid={Boolean(errors.itAndSystemCost)}
+                  {...register("itAndSystemCost", optionalNumber())}
+                />
+              </FormField>
+              <FormField
+                id="capitalCost"
+                label="Capital / equipment (EUR)"
+                optional
+                error={errors.capitalCost?.message}
+              >
+                <Input
+                  id="capitalCost"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={1000}
+                  placeholder="0"
+                  aria-invalid={Boolean(errors.capitalCost)}
+                  {...register("capitalCost", optionalNumber())}
+                />
+              </FormField>
+            </div>
+            {modelledCost > 0 && (
+              <p className="text-sm text-muted-foreground">
+                Modelled SCM total (computed by ERBA):{" "}
+                <span className="font-mono font-semibold text-foreground">
+                  {formatEur(modelledCost)}
+                </span>
+              </p>
+            )}
             <FormField
               id="description"
               label="Describe the burden"

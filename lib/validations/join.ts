@@ -86,6 +86,31 @@ const painSchema = z
       .max(1000, "Keep the description under 1,000 characters")
       .optional()
       .or(z.literal("")),
+    internalAdminHours: z
+      .number()
+      .nonnegative("Hours cannot be negative")
+      .max(100_000, "That number looks too large")
+      .optional(),
+    averageHourlyWage: z
+      .number()
+      .nonnegative("Hourly wage cannot be negative")
+      .max(10_000, "That number looks too large")
+      .optional(),
+    externalConsultingCost: z
+      .number()
+      .nonnegative("Cost cannot be negative")
+      .max(1_000_000_000_000, "That number looks too large")
+      .optional(),
+    itAndSystemCost: z
+      .number()
+      .nonnegative("Cost cannot be negative")
+      .max(1_000_000_000_000, "That number looks too large")
+      .optional(),
+    capitalCost: z
+      .number()
+      .nonnegative("Cost cannot be negative")
+      .max(1_000_000_000_000, "That number looks too large")
+      .optional(),
   })
   .superRefine((data, ctx) => {
     const hasRegulation = Boolean(data.regulation);
@@ -124,7 +149,16 @@ const COMPANY_FIELDS = [
   "isAnonymous",
 ] as const;
 const INDIVIDUAL_FIELDS = ["memberType", "isAnonymous"] as const;
-const PAIN_FIELDS = ["regulation", "estimatedCostEur", "description"] as const;
+const PAIN_FIELDS = [
+  "regulation",
+  "estimatedCostEur",
+  "description",
+  "internalAdminHours",
+  "averageHourlyWage",
+  "externalConsultingCost",
+  "itAndSystemCost",
+  "capitalCost",
+] as const;
 
 export function stepFields(
   step: number,

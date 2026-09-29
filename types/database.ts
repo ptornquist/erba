@@ -2,9 +2,10 @@
  * Strict TypeScript representation of the ERBA Supabase schema.
  *
  * Tables:
- *  - profiles          one row per authenticated user
- *  - companies         one (or more) companies owned by a profile
- *  - pain_submissions  regulatory-burden data points reported by a company
+ *  - profiles           one row per authenticated user
+ *  - companies          one (or more) companies owned by a profile
+ *  - pain_submissions   public Pain Index ledger rows
+ *  - compliance_costs   EU Standard Cost Model inputs and ERBA-normalised totals
  */
 
 export type UUID = string;
@@ -78,6 +79,54 @@ export type PainSubmissionInsert = Omit<
     >
   >;
 export type PainSubmissionUpdate = Partial<PainSubmission>;
+
+/** Tabell: compliance_costs */
+export type ComplianceCost = {
+  id: string;
+  company_id: string; // Koppling till företaget som rapporterar
+  framework_name: string; // T.ex. "NIS2", "AI Act", "CSRD"
+
+  // --- EU Standard Cost Model (Inmatningsfält) ---
+  internal_admin_hours: number; // Intern tid lagd på administration
+  average_hourly_wage: number; // Snittlön för administrationen
+  external_consulting_cost: number; // Advokater, konsulter etc.
+  it_and_system_cost: number; // Nya system/licenser som krävts
+  capital_cost: number; // Utrustning/hårdvara
+
+  // --- Sammanställning & Normalisering ---
+  total_reported_cost: number; // Användarens totala siffra (rådata)
+  erba_normalised_cost: number | null; // ERBA:s justerade siffra (räknas ut i bakgrunden)
+
+  // --- Jonas Verifieringsnivåer (Tiers) ---
+  // 1 = Self-reported, 2 = Evidence supplied, 3 = Independently verified
+  verification_tier: 1 | 2 | 3;
+
+  // Array för uppladdade bevis (fakturor, tidsloggar) för Tier 2 och 3
+  evidence_documents: string[];
+
+  created_at: string;
+};
+
+export type ComplianceCostInsert = Omit<
+  ComplianceCost,
+  "id" | "created_at" | "erba_normalised_cost" | "verification_tier" | "evidence_documents"
+> &
+  Partial<
+    Pick<
+      ComplianceCost,
+      | "id"
+      | "created_at"
+      | "erba_normalised_cost"
+      | "verification_tier"
+      | "evidence_documents"
+    >
+  > & {
+    pain_submission_id?: UUID | null;
+  };
+
+export type ComplianceCostUpdate = Partial<ComplianceCost> & {
+  pain_submission_id?: UUID | null;
+};
 
 export const IMPACT_LEVELS = ["High", "Med", "Low"] as const;
 export type ImpactLevel = (typeof IMPACT_LEVELS)[number];
@@ -180,6 +229,20 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "pain_submissions_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      compliance_costs: {
+        Row: ComplianceCost & { pain_submission_id: UUID | null };
+        Insert: ComplianceCostInsert;
+        Update: ComplianceCostUpdate;
+        Relationships: [
+          {
+            foreignKeyName: "compliance_costs_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";

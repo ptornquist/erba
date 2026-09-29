@@ -29,6 +29,7 @@ declare
   code        text;
   attempts    integer := 0;
   new_company    uuid;
+  new_pain       uuid;
   cost           numeric;
   v_member_type  text;
   v_company_name text;
@@ -94,7 +95,36 @@ begin
             trim(meta ->> 'regulation_name'),
             cost,
             nullif(trim(meta ->> 'description'), '')
-          );
+          )
+          returning id into new_pain;
+
+          begin
+            insert into public.compliance_costs (
+              company_id,
+              pain_submission_id,
+              framework_name,
+              internal_admin_hours,
+              average_hourly_wage,
+              external_consulting_cost,
+              it_and_system_cost,
+              capital_cost,
+              total_reported_cost,
+              verification_tier
+            ) values (
+              new_company,
+              new_pain,
+              trim(meta ->> 'regulation_name'),
+              coalesce(nullif(meta ->> 'internal_admin_hours', '')::numeric, 0),
+              coalesce(nullif(meta ->> 'average_hourly_wage', '')::numeric, 0),
+              coalesce(nullif(meta ->> 'external_consulting_cost', '')::numeric, 0),
+              coalesce(nullif(meta ->> 'it_and_system_cost', '')::numeric, 0),
+              coalesce(nullif(meta ->> 'capital_cost', '')::numeric, 0),
+              cost,
+              1
+            );
+          exception when others then
+            raise warning 'handle_new_user: could not provision compliance_costs for %: %', new.id, sqlerrm;
+          end;
         end if;
       end if;
     exception when others then

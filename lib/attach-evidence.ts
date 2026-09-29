@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { uploadEvidenceToVault } from "@/lib/upload-evidence";
+import { VERIFICATION_TIER } from "@/lib/scm";
 import type { Database } from "@/types/database";
 
 type Client = SupabaseClient<Database>;
@@ -35,6 +36,28 @@ export async function attachComplianceEvidence(
 
   if (updateError) {
     throw updateError;
+  }
+
+  const { data: costRow } = await supabase
+    .from("compliance_costs")
+    .select("id, evidence_documents")
+    .eq("pain_submission_id", params.submissionId)
+    .eq("verification_tier", VERIFICATION_TIER.self_reported)
+    .maybeSingle();
+
+  if (costRow) {
+    const documents = Array.isArray(costRow.evidence_documents)
+      ? costRow.evidence_documents
+      : [];
+    const { error: costError } = await supabase
+      .from("compliance_costs")
+      .update({
+        verification_tier: VERIFICATION_TIER.evidence_supplied,
+        evidence_documents: [...documents, uploaded.path],
+      })
+      .eq("id", costRow.id)
+      .eq("verification_tier", VERIFICATION_TIER.self_reported);
+    if (costError) throw costError;
   }
 
   const { error: vaultError } = await supabase.from("document_vault").insert({
