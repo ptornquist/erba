@@ -87,7 +87,11 @@ create policy compliance_costs_insert_self_reported
   for insert
   to authenticated
   with check (
-    verification_tier = 1
+    verification_tier in (1, 2)
+    and (
+      verification_tier = 1
+      or cardinality(coalesce(evidence_documents, '{}'::text[])) > 0
+    )
     and exists (
       select 1
       from public.companies c

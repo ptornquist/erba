@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { attachComplianceEvidence } from "@/lib/attach-evidence";
 import { humaniseSupabaseError } from "@/lib/errors";
+import { EVIDENCE_BUCKET } from "@/lib/evidence";
 import { scmNormalisedCost } from "@/lib/scm";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -40,11 +40,21 @@ function parseAmount(value: string): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 
+function uniqueEvidenceObjectPath(userId: string, fileName: string): string {
+  const lastDot = fileName.lastIndexOf(".");
+  const ext =
+    lastDot >= 0
+      ? fileName.slice(lastDot + 1).replace(/[^A-Za-z0-9]/g, "")
+      : "bin";
+  return `${userId}/${Date.now()}.${ext || "bin"}`;
+}
+
 export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<CostFormState>(EMPTY_FORM);
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingEvidence, setIsUploadingEvidence] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -106,6 +116,33 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
       const externalComplianceCostEur =
         externalConsultingCost + itAndSystemCost + capitalCost;
 
+      let evidencePath: string | null = null;
+      if (evidenceFile) {
+        setIsUploadingEvidence(true);
+        try {
+          const objectPath = uniqueEvidenceObjectPath(user.id, evidenceFile.name);
+          const { data: uploaded, error: uploadError } = await supabase.storage
+            .from(EVIDENCE_BUCKET)
+            .upload(objectPath, evidenceFile, {
+              cacheControl: "3600",
+              upsert: false,
+              contentType: evidenceFile.type || "application/octet-stream",
+            });
+
+          if (uploadError) throw uploadError;
+          evidencePath = uploaded.path;
+          if (!evidencePath) {
+            throw new Error(
+              "Storage did not return a file path. The evidence-vault upload failed.",
+            );
+          }
+        } finally {
+          setIsUploadingEvidence(false);
+        }
+      }
+
+      const verificationTier = evidencePath ? 2 : 1;
+
       const { data: pain, error: painError } = await supabase
         .from("pain_submissions")
         .insert({
@@ -115,7 +152,7 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
           internal_admin_cost_eur: internalAdminCostEur,
           external_compliance_cost_eur: externalComplianceCostEur,
           description: `Standard Cost Model report for ${frameworkName}.`,
-          verification_status: "self_reported",
+          verification_status: evidencePath ? "evidence_supplied" : "self_reported",
         })
         .select("id")
         .single();
@@ -134,39 +171,17 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
         it_and_system_cost: itAndSystemCost,
         capital_cost: capitalCost,
         total_reported_cost: totalReportedCost,
-        verification_tier: 1,
-        evidence_documents: [],
+        verification_tier: verificationTier,
+        evidence_documents: evidencePath ? [evidencePath] : [],
       });
       if (costError) throw costError;
-
-      if (evidenceFile) {
-        try {
-          await attachComplianceEvidence(supabase, {
-            userId: user.id,
-            companyId,
-            submissionId: pain.id,
-            file: evidenceFile,
-          });
-        } catch (evidenceError) {
-          setForm(EMPTY_FORM);
-          setEvidenceFile(null);
-          if (fileInputRef.current) fileInputRef.current.value = "";
-          setSuccessMessage("Cost data successfully submitted to the ledger");
-          setSubmitError(
-            humaniseSupabaseError(
-              evidenceError,
-              "The cost was saved, but evidence could not be attached.",
-            ),
-          );
-          return;
-        }
-      }
 
       setForm(EMPTY_FORM);
       setEvidenceFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setSuccessMessage("Cost data successfully submitted to the ledger");
     } catch (error) {
+      setIsUploadingEvidence(false);
       setSubmitError(
         humaniseSupabaseError(error, "Could not submit cost data to the ledger."),
       );
@@ -340,7 +355,11 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
         disabled={isSubmitting}
         className="inline-flex h-11 w-full items-center justify-center rounded-md bg-blue-900 px-6 text-sm font-semibold text-white hover:bg-blue-950 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isSubmitting ? "Submitting…" : "Submit cost report"}
+        {isUploadingEvidence
+          ? "Uploading evidence..."
+          : isSubmitting
+            ? "Submitting…"
+            : "Submit cost report"}
       </button>
     </form>
   );
