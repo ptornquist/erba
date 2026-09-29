@@ -305,6 +305,14 @@ export type Database = {
         Args: Record<string, never>;
         Returns: number;
       };
+      get_burn_rate_aggregates: {
+        Args: Record<string, never>;
+        Returns: {
+          total_burn_rate: number;
+          total_assessments: number;
+          evidence_backed_total: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

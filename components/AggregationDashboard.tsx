@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Cell,
   Legend,
@@ -12,9 +12,6 @@ import {
 import { humaniseSupabaseError } from "@/lib/errors";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 import { formatEurCompact, formatInteger, toNumber } from "@/lib/utils";
-import type { ComplianceCost } from "@/types/database";
-
-const PAGE_SIZE = 1000;
 
 const DONUT_COLORS = [
   "#003399",
@@ -26,47 +23,26 @@ const DONUT_COLORS = [
   "#94b4e0",
 ];
 
-type CostRow = ComplianceCost & { pain_submission_id?: string | null };
+type BurnRateAggregates = {
+  total_burn_rate: number;
+  total_assessments: number;
+  evidence_backed_total: number;
+};
 
-function recordedTotal(row: CostRow): number {
-  if (row.erba_normalised_cost !== null && row.erba_normalised_cost !== undefined) {
-    return toNumber(row.erba_normalised_cost);
-  }
-  return toNumber(row.total_reported_cost);
-}
+const EMPTY_AGGREGATES: BurnRateAggregates = {
+  total_burn_rate: 0,
+  total_assessments: 0,
+  evidence_backed_total: 0,
+};
 
-function regulationName(row: CostRow): string {
-  const name = row.framework_name?.trim();
-  return name ? name : "Other";
-}
-
-function verificationTier(row: CostRow): number {
-  return toNumber(row.verification_tier);
-}
-
-async function fetchAllComplianceCosts(): Promise<CostRow[]> {
-  const supabase = createClient();
-  const rows: CostRow[] = [];
-
-  for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from("compliance_costs")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
-
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-
-    rows.push(...data);
-    if (data.length < PAGE_SIZE) break;
-  }
-
-  return rows;
-}
+type RegulationSlice = {
+  name: string;
+  value: number;
+};
 
 export function AggregationDashboard() {
-  const [rows, setRows] = useState<CostRow[]>([]);
+  const [aggregates, setAggregates] = useState<BurnRateAggregates>(EMPTY_AGGREGATES);
+  const [chartData, setChartData] = useState<RegulationSlice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -88,9 +64,38 @@ export function AggregationDashboard() {
       }
 
       try {
-        const data = await fetchAllComplianceCosts();
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc("get_burn_rate_aggregates");
+        if (error) throw error;
+
+        const row = Array.isArray(data) ? data[0] : data;
+        const nextAggregates: BurnRateAggregates = {
+          total_burn_rate: toNumber(row?.total_burn_rate),
+          total_assessments: toNumber(row?.total_assessments),
+          evidence_backed_total: toNumber(row?.evidence_backed_total),
+        };
+
+        const { data: costRows, error: chartError } = await supabase
+          .from("compliance_costs")
+          .select("framework_name, total_reported_cost");
+        if (chartError) throw chartError;
+
+        const byRegulation = new Map<string, number>();
+        for (const cost of costRows ?? []) {
+          const name = cost.framework_name?.trim() || "Other";
+          byRegulation.set(
+            name,
+            (byRegulation.get(name) ?? 0) + toNumber(cost.total_reported_cost),
+          );
+        }
+        const nextChart = Array.from(byRegulation.entries())
+          .map(([name, value]) => ({ name, value }))
+          .filter((entry) => entry.value > 0)
+          .sort((a, b) => b.value - a.value);
+
         if (!cancelled) {
-          setRows(data);
+          setAggregates(nextAggregates);
+          setChartData(nextChart);
           setError(null);
         }
       } catch (cause) {
@@ -98,7 +103,7 @@ export function AggregationDashboard() {
           setError(
             humaniseSupabaseError(
               cause,
-              "Could not load compliance cost records.",
+              "Could not load burn-rate aggregates.",
             ),
           );
         }
@@ -113,34 +118,6 @@ export function AggregationDashboard() {
     };
   }, []);
 
-  const metrics = useMemo(() => {
-    let burnRate = 0;
-    let evidenceBacked = 0;
-    const byRegulation = new Map<string, number>();
-
-    for (const row of rows) {
-      const total = recordedTotal(row);
-      burnRate += total;
-      if (verificationTier(row) >= 2) {
-        evidenceBacked += total;
-      }
-      const name = regulationName(row);
-      byRegulation.set(name, (byRegulation.get(name) ?? 0) + total);
-    }
-
-    const chartData = Array.from(byRegulation.entries())
-      .map(([name, value]) => ({ name, value }))
-      .filter((entry) => entry.value > 0)
-      .sort((a, b) => b.value - a.value);
-
-    return {
-      burnRate,
-      activeAssessments: rows.length,
-      evidenceBacked,
-      chartData,
-    };
-  }, [rows]);
-
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm">
       <header className="bg-slate-900 px-6 py-8 text-white sm:px-8">
@@ -151,9 +128,9 @@ export function AggregationDashboard() {
           Aggregation Dashboard
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-          Ledger totals from the EU Standard Cost Model. Figures are summed from
-          every <span className="font-medium text-white">compliance_costs</span>{" "}
-          record.
+          Ledger totals from the EU Standard Cost Model. KPI figures come from
+          the <span className="font-medium text-white">get_burn_rate_aggregates</span>{" "}
+          function.
         </p>
       </header>
 
@@ -170,19 +147,27 @@ export function AggregationDashboard() {
         <dl className="grid gap-4 sm:grid-cols-3">
           <KpiCard
             label="Total Regulatory Burn Rate"
-            value={loading ? "—" : formatEurCompact(metrics.burnRate)}
+            value={
+              loading ? "—" : formatEurCompact(aggregates.total_burn_rate)
+            }
             hint="Sum of calculated compliance totals"
             loading={loading}
           />
           <KpiCard
             label="Active Assessments"
-            value={loading ? "—" : formatInteger(metrics.activeAssessments)}
+            value={
+              loading ? "—" : formatInteger(aggregates.total_assessments)
+            }
             hint="Number of cost submissions"
             loading={loading}
           />
           <KpiCard
             label="Evidence-Backed Totals"
-            value={loading ? "—" : formatEurCompact(metrics.evidenceBacked)}
+            value={
+              loading
+                ? "—"
+                : formatEurCompact(aggregates.evidence_backed_total)
+            }
             hint="Sum where verification tier is 2 or 3"
             loading={loading}
           />
@@ -201,7 +186,7 @@ export function AggregationDashboard() {
           <div className="h-[340px] w-full">
             {loading || !mounted ? (
               <div className="h-full w-full animate-pulse rounded-lg bg-slate-100" />
-            ) : metrics.chartData.length === 0 ? (
+            ) : chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-slate-500">
                 No compliance cost records to chart yet.
               </div>
@@ -209,7 +194,7 @@ export function AggregationDashboard() {
               <ResponsiveContainer width="100%" height={340}>
                 <PieChart>
                   <Pie
-                    data={metrics.chartData}
+                    data={chartData}
                     dataKey="value"
                     nameKey="name"
                     cx="50%"
@@ -220,7 +205,7 @@ export function AggregationDashboard() {
                     stroke="#ffffff"
                     strokeWidth={2}
                   >
-                    {metrics.chartData.map((entry, index) => (
+                    {chartData.map((entry, index) => (
                       <Cell
                         key={entry.name}
                         fill={DONUT_COLORS[index % DONUT_COLORS.length]}
