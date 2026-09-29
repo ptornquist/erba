@@ -8,6 +8,7 @@ import {
   FolderLock,
   LayoutDashboard,
   MessagesSquare,
+  PieChart,
   Radar,
   type LucideIcon,
 } from "lucide-react";
@@ -37,6 +38,13 @@ export const DASHBOARD_NAV: NavItem[] = [
     shortLabel: "Costs",
     description: "Standard Cost Model intake",
     icon: Euro,
+  },
+  {
+    href: "/dashboard/aggregation",
+    label: "Aggregation",
+    shortLabel: "Totals",
+    description: "Burn rate & regulation mix",
+    icon: PieChart,
   },
   {
     href: "/dashboard/policy",
