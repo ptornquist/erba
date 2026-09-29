@@ -38,3 +38,13 @@ create policy "evidence-vault: owner update"
     bucket_id = 'evidence-vault'
     and split_part(name, '/', 1) = (select auth.uid())::text
   );
+
+drop policy if exists "evidence-vault: owner delete" on storage.objects;
+create policy "evidence-vault: owner delete"
+  on storage.objects
+  for delete
+  to authenticated
+  using (
+    bucket_id = 'evidence-vault'
+    and split_part(name, '/', 1) = (select auth.uid())::text
+  );

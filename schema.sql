@@ -302,6 +302,16 @@ create policy "evidence-vault: owner update"
     and split_part(name, '/', 1) = (select auth.uid())::text
   );
 
+drop policy if exists "evidence-vault: owner delete" on storage.objects;
+create policy "evidence-vault: owner delete"
+  on storage.objects
+  for delete
+  to authenticated
+  using (
+    bucket_id = 'evidence-vault'
+    and split_part(name, '/', 1) = (select auth.uid())::text
+  );
+
 -- EU Standard Cost Model cost records (Tool #58). ERBA writes
 -- erba_normalised_cost in a trigger; clients must not set it.
 create table if not exists public.compliance_costs (
