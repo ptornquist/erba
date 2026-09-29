@@ -35,14 +35,14 @@ const EMPTY_AGGREGATES: BurnRateAggregates = {
   evidence_backed_total: 0,
 };
 
-type RegulationSlice = {
-  name: string;
-  value: number;
+type FrameworkCostSlice = {
+  framework_name: string;
+  total_cost: number;
 };
 
 export function AggregationDashboard() {
   const [aggregates, setAggregates] = useState<BurnRateAggregates>(EMPTY_AGGREGATES);
-  const [chartData, setChartData] = useState<RegulationSlice[]>([]);
+  const [chartData, setChartData] = useState<FrameworkCostSlice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -75,23 +75,18 @@ export function AggregationDashboard() {
           evidence_backed_total: toNumber(row?.evidence_backed_total),
         };
 
-        const { data: costRows, error: chartError } = await supabase
-          .from("compliance_costs")
-          .select("framework_name, total_reported_cost");
+        const { data: chartData, error: chartError } = await supabase.rpc(
+          "get_costs_by_framework",
+        );
         if (chartError) throw chartError;
 
-        const byRegulation = new Map<string, number>();
-        for (const cost of costRows ?? []) {
-          const name = cost.framework_name?.trim() || "Other";
-          byRegulation.set(
-            name,
-            (byRegulation.get(name) ?? 0) + toNumber(cost.total_reported_cost),
-          );
-        }
-        const nextChart = Array.from(byRegulation.entries())
-          .map(([name, value]) => ({ name, value }))
-          .filter((entry) => entry.value > 0)
-          .sort((a, b) => b.value - a.value);
+        const nextChart: FrameworkCostSlice[] = (chartData ?? [])
+          .map((row) => ({
+            framework_name: row.framework_name?.trim() || "Other",
+            total_cost: toNumber(row.total_cost),
+          }))
+          .filter((row) => row.total_cost > 0)
+          .sort((a, b) => b.total_cost - a.total_cost);
 
         if (!cancelled) {
           setAggregates(nextAggregates);
@@ -195,8 +190,8 @@ export function AggregationDashboard() {
                 <PieChart>
                   <Pie
                     data={chartData}
-                    dataKey="value"
-                    nameKey="name"
+                    dataKey="total_cost"
+                    nameKey="framework_name"
                     cx="50%"
                     cy="50%"
                     innerRadius={78}
@@ -207,7 +202,7 @@ export function AggregationDashboard() {
                   >
                     {chartData.map((entry, index) => (
                       <Cell
-                        key={entry.name}
+                        key={entry.framework_name}
                         fill={DONUT_COLORS[index % DONUT_COLORS.length]}
                       />
                     ))}

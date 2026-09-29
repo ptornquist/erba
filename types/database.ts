@@ -335,6 +335,13 @@ export type Database = {
           evidence_backed_total: number;
         }[];
       };
+      get_costs_by_framework: {
+        Args: Record<string, never>;
+        Returns: {
+          framework_name: string;
+          total_cost: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
