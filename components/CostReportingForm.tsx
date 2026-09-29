@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { scmNormalisedCost, VERIFICATION_TIER } from "@/lib/scm";
-import type { ComplianceCost } from "@/types/database";
+import { attachComplianceEvidence } from "@/lib/attach-evidence";
+import { humaniseSupabaseError } from "@/lib/errors";
+import { scmNormalisedCost } from "@/lib/scm";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase";
 
 const FRAMEWORKS = ["NIS2", "CSRD", "EU AI Act", "Other"] as const;
 
@@ -29,7 +31,8 @@ const EMPTY_FORM: CostFormState = {
 const euro = new Intl.NumberFormat("en-IE", {
   style: "currency",
   currency: "EUR",
-  maximumFractionDigits: 0,
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
 });
 
 function parseAmount(value: string): number {
@@ -41,6 +44,9 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState<CostFormState>(EMPTY_FORM);
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const totalReportedCost = useMemo(
     () =>
@@ -63,30 +69,110 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
     setEvidenceFile(event.target.files?.[0] ?? null);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
 
-    const verification_tier = evidenceFile
-      ? VERIFICATION_TIER.evidence_supplied
-      : VERIFICATION_TIER.self_reported;
+    setSubmitError(null);
+    setSuccessMessage(null);
+    setIsSubmitting(true);
 
-    const payload: ComplianceCost = {
-      id: crypto.randomUUID(),
-      company_id: companyId,
-      framework_name: form.framework_name || "Other",
-      internal_admin_hours: parseAmount(form.internal_admin_hours),
-      average_hourly_wage: parseAmount(form.average_hourly_wage),
-      external_consulting_cost: parseAmount(form.external_consulting_cost),
-      it_and_system_cost: parseAmount(form.it_and_system_cost),
-      capital_cost: parseAmount(form.capital_cost),
-      total_reported_cost: totalReportedCost,
-      erba_normalised_cost: totalReportedCost,
-      verification_tier,
-      evidence_documents: evidenceFile ? [evidenceFile.name] : [],
-      created_at: new Date().toISOString(),
-    };
+    try {
+      if (!isSupabaseConfigured) {
+        throw new Error(
+          "This deployment is not connected to Supabase yet. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY and try again.",
+        );
+      }
 
-    console.log("ComplianceCost", payload);
+      if (!companyId) {
+        throw new Error("Register a company first before reporting costs.");
+      }
+
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error("Sign in to submit cost data to the ledger.");
+      }
+
+      const frameworkName = form.framework_name || "Other";
+      const internalAdminHours = parseAmount(form.internal_admin_hours);
+      const averageHourlyWage = parseAmount(form.average_hourly_wage);
+      const externalConsultingCost = parseAmount(form.external_consulting_cost);
+      const itAndSystemCost = parseAmount(form.it_and_system_cost);
+      const capitalCost = parseAmount(form.capital_cost);
+      const internalAdminCostEur = internalAdminHours * averageHourlyWage;
+      const externalComplianceCostEur =
+        externalConsultingCost + itAndSystemCost + capitalCost;
+
+      const { data: pain, error: painError } = await supabase
+        .from("pain_submissions")
+        .insert({
+          company_id: companyId,
+          regulation_name: frameworkName,
+          estimated_cost_eur: totalReportedCost,
+          internal_admin_cost_eur: internalAdminCostEur,
+          external_compliance_cost_eur: externalComplianceCostEur,
+          description: `Standard Cost Model report for ${frameworkName}.`,
+          verification_status: "self_reported",
+        })
+        .select("id")
+        .single();
+      if (painError) throw painError;
+      if (!pain?.id) {
+        throw new Error("Could not save your Pain Index entry.");
+      }
+
+      const { error: costError } = await supabase.from("compliance_costs").insert({
+        company_id: companyId,
+        pain_submission_id: pain.id,
+        framework_name: frameworkName,
+        internal_admin_hours: internalAdminHours,
+        average_hourly_wage: averageHourlyWage,
+        external_consulting_cost: externalConsultingCost,
+        it_and_system_cost: itAndSystemCost,
+        capital_cost: capitalCost,
+        total_reported_cost: totalReportedCost,
+        verification_tier: 1,
+        evidence_documents: [],
+      });
+      if (costError) throw costError;
+
+      if (evidenceFile) {
+        try {
+          await attachComplianceEvidence(supabase, {
+            userId: user.id,
+            companyId,
+            submissionId: pain.id,
+            file: evidenceFile,
+          });
+        } catch (evidenceError) {
+          setForm(EMPTY_FORM);
+          setEvidenceFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = "";
+          setSuccessMessage("Cost data successfully submitted to the ledger");
+          setSubmitError(
+            humaniseSupabaseError(
+              evidenceError,
+              "The cost was saved, but evidence could not be attached.",
+            ),
+          );
+          return;
+        }
+      }
+
+      setForm(EMPTY_FORM);
+      setEvidenceFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      setSuccessMessage("Cost data successfully submitted to the ledger");
+    } catch (error) {
+      setSubmitError(
+        humaniseSupabaseError(error, "Could not submit cost data to the ledger."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -106,6 +192,25 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
           regulatory framework.
         </p>
       </div>
+
+      {successMessage ? (
+        <div
+          className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="text-sm font-semibold text-emerald-900">{successMessage}</p>
+        </div>
+      ) : null}
+
+      {submitError ? (
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+          role="alert"
+        >
+          <p className="text-sm font-medium text-red-800">{submitError}</p>
+        </div>
+      ) : null}
 
       <label className="block space-y-1.5">
         <span className="text-sm font-medium text-slate-800">Regulation</span>
@@ -215,25 +320,28 @@ export function CostReportingForm({ companyId = "" }: { companyId?: string }) {
         </div>
       </section>
 
-      <div className="flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-            Total Reported Cost
-          </p>
-          <p className="mt-1 font-mono text-2xl font-semibold tabular-nums text-blue-900">
-            {euro.format(totalReportedCost)}
-          </p>
-          <p className="mt-1 text-xs text-slate-500">
-            (Admin Hours × Hourly Wage) + consulting + IT + capital
-          </p>
-        </div>
-        <button
-          type="submit"
-          className="inline-flex h-11 items-center justify-center rounded-md bg-blue-900 px-6 text-sm font-semibold text-white hover:bg-blue-950"
-        >
-          Submit cost report
-        </button>
+      <div
+        className="rounded-lg border-2 border-blue-900 bg-blue-50 px-5 py-4"
+        aria-live="polite"
+      >
+        <p className="text-sm font-semibold text-blue-900">
+          Total Compliance Cost
+        </p>
+        <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-blue-900">
+          {euro.format(totalReportedCost)}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-blue-900/70">
+          (Internal Admin Hours × Average Hourly Wage) + External Consulting
+          &amp; Legal Costs + IT and System Costs + Capital Costs
+        </p>
       </div>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="inline-flex h-11 w-full items-center justify-center rounded-md bg-blue-900 px-6 text-sm font-semibold text-white hover:bg-blue-950 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {isSubmitting ? "Submitting…" : "Submit cost report"}
+      </button>
     </form>
   );
 }
