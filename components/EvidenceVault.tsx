@@ -221,12 +221,18 @@ export function EvidenceVault() {
             {files.map((file) => {
               const busy =
                 openingPath === file.path || deletingPath === file.path;
+              const displayName = file.name.includes("_")
+                ? file.name.substring(file.name.indexOf("_") + 1)
+                : file.name;
               return (
                 <li key={file.path}>
                   <article className="flex h-full flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-1 flex-col gap-2 p-5">
-                      <h2 className="truncate text-lg font-bold leading-snug text-slate-900">
-                        {file.name}
+                      <h2
+                        className="truncate text-lg font-bold leading-snug text-slate-900"
+                        title={displayName}
+                      >
+                        {displayName}
                       </h2>
                       <p className="text-sm text-slate-500">
                         {formatCreatedAt(file.createdAt)}

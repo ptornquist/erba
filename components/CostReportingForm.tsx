@@ -41,12 +41,9 @@ function parseAmount(value: string): number {
 }
 
 function uniqueEvidenceObjectPath(userId: string, fileName: string): string {
-  const lastDot = fileName.lastIndexOf(".");
-  const ext =
-    lastDot >= 0
-      ? fileName.slice(lastDot + 1).replace(/[^A-Za-z0-9]/g, "")
-      : "bin";
-  return `${userId}/${Date.now()}.${ext || "bin"}`;
+  const originalName = fileName.replace(/[/\\]+/g, "_").trim() || "file";
+  const uniqueFileName = `${Date.now()}_${originalName}`;
+  return `${userId}/${uniqueFileName}`;
 }
 
 export function CostReportingForm({ companyId = "" }: { companyId?: string }) {

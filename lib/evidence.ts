@@ -29,9 +29,9 @@ export function isAllowedEvidenceFile(file: File): boolean {
 }
 
 export function evidenceObjectPath(userId: string, fileName: string): string {
-  const ext = evidenceExtension(fileName) || "bin";
-  const safe = fileName.replace(/[^\w.\-]+/g, "_").slice(0, 80);
-  return `${userId}/${crypto.randomUUID()}-${safe || `evidence.${ext}`}`;
+  const originalName = fileName.replace(/[/\\]+/g, "_").trim() || "file";
+  const uniqueFileName = `${Date.now()}_${originalName}`;
+  return `${userId}/${uniqueFileName}`;
 }
 
 export function isHttpUrl(value: string): boolean {
