@@ -6,6 +6,7 @@
  *  - companies          one (or more) companies owned by a profile
  *  - pain_submissions   public Pain Index ledger rows
  *  - compliance_costs   EU Standard Cost Model inputs and ERBA-normalised totals
+ *  - regulatory_policies  curated intelligence feed with deadlines and industry tags
  */
 
 export type UUID = string;
@@ -145,6 +146,21 @@ export type PolicyUpdateInsert = Omit<PolicyUpdate, "id"> &
   Partial<Pick<PolicyUpdate, "id">>;
 export type PolicyUpdateUpdate = Partial<PolicyUpdate>;
 
+/** Curated regulatory intelligence cards, ordered by compliance deadline. */
+export type RegulatoryPolicy = {
+  id: UUID;
+  framework_name: string;
+  description: string;
+  /** DATE column, serialised as YYYY-MM-DD. */
+  deadline: string;
+  impact_level: string;
+  industry_tags: string[];
+};
+
+export type RegulatoryPolicyInsert = Omit<RegulatoryPolicy, "id"> &
+  Partial<Pick<RegulatoryPolicy, "id" | "industry_tags">>;
+export type RegulatoryPolicyUpdate = Partial<RegulatoryPolicy>;
+
 /** A compliance action item scoped to one company (and tagged with its industry). */
 export type ComplianceTask = {
   id: UUID;
@@ -254,6 +270,12 @@ export type Database = {
         Row: PolicyUpdate;
         Insert: PolicyUpdateInsert;
         Update: PolicyUpdateUpdate;
+        Relationships: [];
+      };
+      regulatory_policies: {
+        Row: RegulatoryPolicy;
+        Insert: RegulatoryPolicyInsert;
+        Update: RegulatoryPolicyUpdate;
         Relationships: [];
       };
       compliance_tasks: {
